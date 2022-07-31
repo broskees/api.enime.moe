@@ -60,7 +60,8 @@ export default class ProxyController {
 
         if (source.type === "DIRECT") { // No need to proxy the request, redirect to raw source directly
             return {
-                video: source.url
+                video: source.url,
+                browser: source.browser
             };
         }
 
@@ -71,7 +72,7 @@ export default class ProxyController {
         const url = source.referer ? new URL(source.referer.replaceAll("//", "/")) : undefined;
 
         try {
-            rawSource = await scraper.getRawSource(source.url, url?.href);
+            rawSource = await scraper.getRawSource(source.url, undefined);
         } catch (e) {
             rawSource = scraper.getSourceConsumet(url || source.url);
             Logger.error(`Error occurred while trying to fetch source ID ${source.id}, falling back to Consumet service`, e);

@@ -95,6 +95,7 @@ model Source {
     referer     String?
     resolution  String?
     format      String?
+    browser     Boolean    @default(true)
     createdAt   DateTime   @default(now())
     updatedAt   DateTime   @updatedAt
 

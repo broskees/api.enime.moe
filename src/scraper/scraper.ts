@@ -31,7 +31,7 @@ export default abstract class Scraper {
         return undefined;
     }
 
-    async getRawSource(sourceUrl: string | URL, referer = undefined): Promise<RawSource> {
+    async getRawSource(sourceUrl: string | URL, config: object | undefined): Promise<RawSource> {
         return undefined;
     }
 

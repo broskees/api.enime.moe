@@ -47,6 +47,7 @@ export default class SearchController {
         if (!perPage || perPage <= 0) perPage = 20;
         perPage = Math.min(100, perPage);
 
+        // @ts-ignore
         const results = await this.searchPaginator<Prisma.Anime, Prisma.AnimeFindManyArgs>(this.databaseService.anime, {
             orderBy: {
                 updatedAt: "desc"

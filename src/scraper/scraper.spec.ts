@@ -20,16 +20,18 @@ describe("Scraper Test", function () {
 
     it("Scraper", async () => {
         console.log("Reached 1")
-        // const scraper = new GogoanimeScraper(application.get(ProxyService));
-        const scraper = new Zoro(application.get(ProxyService));
+        const scraper = new GogoanimeScraper(application.get(ProxyService));
+        // const scraper = new Zoro(application.get(ProxyService));
 
         const anime = await application.get(ScraperModule).matchAnime( {
-            "native": "まちカドまぞく 2丁目",
-            "romaji": "Machikado Mazoku: 2-Choume",
-            "english": "The Demon Girl Next Door Season 2"
+            "native": "彼女、お借りします",
+            "romaji": "Kanojo, Okarishimasu",
+            "english": "Rent-a-Girlfriend",
+            "userPreferred": "Kanojo, Okarishimasu"
         }, scraper);
 
-        console.log(anime);
+        console.log(await scraper.fetch(anime.path, 1, 1));
+        console.log(await scraper.getRawSource("https://goload.io/streaming.php?id=MTQyMTUy&title=Kanojo%2C+Okarishimasu+Episode+1"));
 
 
 

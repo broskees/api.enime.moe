@@ -23,11 +23,15 @@ import RecentController from './controller/recent.controller';
 import SearchController from './controller/search.controller';
 import DatabaseModule from './database/database.module';
 import PopularController from './controller/popular.controller';
+import StatsController from './controller/stats.controller';
+import SocketModule from './socket/socket.module';
+import SourceController from './controller/source.controller';
+import SocketService from './socket/socket.service';
 
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true
-  }), ScheduleModule.forRoot(), DatabaseModule, ScraperModule, InformationModule, HealthModule,
+  }), ScheduleModule.forRoot(), SocketModule, DatabaseModule, ScraperModule, InformationModule, HealthModule,
       CacheModule.register({
           store: redisStore,
           host: process.env.REDIS_HOST,
@@ -51,8 +55,8 @@ import PopularController from './controller/popular.controller';
           }),
       })
   ],
-  controllers: [AppController, AnimeController, ProxyController, RecentController, SearchController, EpisodeController, PopularController],
-  providers: [AppService, DatabaseService, ProxyService, ScraperService,
+  controllers: [AppController, AnimeController, SourceController, StatsController, ProxyController, RecentController, SearchController, EpisodeController, PopularController],
+  providers: [AppService, DatabaseService, ProxyService, SocketService, ScraperService,
       {
           provide: APP_GUARD,
           useClass: ThrottlerBehindProxyGuard,

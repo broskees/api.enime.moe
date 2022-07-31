@@ -1,11 +1,10 @@
 import Scraper, { USER_AGENT } from '../scraper';
 import * as cheerio from 'cheerio';
 import { AnimeWebPage, Episode, RawSource, SourceType } from '../../types/global';
-import * as CryptoJS from 'crypto-js';
 import fetch from 'node-fetch';
 import * as similarity from 'string-similarity';
-import { transform } from '../../helper/romaji';
 import { deepMatch } from '../../helper/match';
+import GogoCDN from '../../extractor/impl/gogocdn';
 
 // Credit to https://github.com/riimuru/gogoanime/blob/46edf3de166b7c5152919d6ac12ab6f55d9ed35b/lib/helpers/extractors/goload.js
 export default class GogoanimeScraper extends Scraper {
@@ -14,88 +13,28 @@ export default class GogoanimeScraper extends Scraper {
     override priority = 1;
     override consumetServiceUrl = "https://consumet-api.herokuapp.com/anime/gogoanime/";
 
-    ENCRYPTION_KEYS_URL =
-        "https://raw.githubusercontent.com/justfoolingaround/animdl-provider-benchmarks/master/api/gogoanime.json";
-
-    keys = undefined;
-
     async getSourceConsumet(sourceUrl: string | URL): Promise<RawSource> {
         if (typeof sourceUrl === "string") sourceUrl = new URL(sourceUrl);
 
-        let rawSourceUrl = (await (await fetch(`${this.consumetServiceUrl}${sourceUrl.pathname}`)).json()).sources[0].url;
+        let response = (await (await fetch(`${this.consumetServiceUrl}${sourceUrl.pathname}`)).json());
+        let rawSourceUrl = response.sources[0].url;
+
         return {
             video: rawSourceUrl,
-            subtitle: undefined
+            subtitle: undefined,
+            referer: response.headers.Referer,
+            browser: true
         }
     }
 
-    async fetchKeys() {
-        if (this.keys) return this.keys;
-
-        const response = await fetch(this.ENCRYPTION_KEYS_URL);
-        const res = await response.json();
-        return this.keys = {
-            iv: CryptoJS.enc.Utf8.parse(res.iv),
-            key: CryptoJS.enc.Utf8.parse(res.key),
-            second_key: CryptoJS.enc.Utf8.parse(res.second_key),
-        };
-    }
-
-    async generateEncryptAjaxParameters(text, id) {
-        const keys = await this.fetchKeys();
-        let iv = keys.iv;
-        let key = keys.key;
-
-        const encryptedKey = CryptoJS.AES.encrypt(id, key, {
-            iv: iv,
-        });
-
-        const script = text.match(/<script type="text\/javascript" src="[^"]+" data-name="episode" data-value="[^"]+"><\/script>/)[0].match(/data-value="[^"]+"/)[0].replace(/(data-value=)?"/, "");
-        const token = CryptoJS.AES.decrypt(script, key, {
-            iv: iv,
-        }).toString(CryptoJS.enc.Utf8);
-
-        return `id=${encryptedKey}&alias=${id}&${token}`;
-    }
-
-    decryptEncryptAjaxResponse(obj) {
-        const decrypted = CryptoJS.enc.Utf8.stringify(
-            CryptoJS.AES.decrypt(obj.data, this.keys.second_key, {
-                iv: this.keys.iv,
-            })
-        );
-        return JSON.parse(decrypted);
-    }
-
-    override async getRawSource(sourceUrl, referer) {
+    override async getRawSource(sourceUrl): Promise<RawSource> {
         const url = sourceUrl instanceof URL ? sourceUrl : new URL(sourceUrl);
-
-        let response = await this.get(url.href, {
-            Referer: referer
-        }, false);
-
-        const params = await this.generateEncryptAjaxParameters(
-            await response.text(),
-            url.searchParams.get("id")
-        );
-
-        const fetchRes = await this.get(`${url.protocol}//${url.hostname}/encrypt-ajax.php?${params}`, {
-                "X-Requested-With": "XMLHttpRequest",
-
-            },
-            false
-        );
-
-        const res = this.decryptEncryptAjaxResponse(await fetchRes.json());
-
-        let source = res.source.length ? res.source[0] : res.source_bk[0];
-
-        if (!source) return undefined;
+        const video = await (new GogoCDN().extract(url));
 
         return {
-            video: source.file,
-            subtitle: undefined
-        };
+            video: video.url,
+            browser: true
+        }
     }
 
     async fetch(path: string, startNumber: number, endNumber: number): Promise<Episode[]> {

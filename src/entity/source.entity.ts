@@ -8,8 +8,8 @@ export default class Source {
     id: string;
 
     @ApiProperty({
-        description: "Source proxied url",
-        example: "https://api.enime.moe/proxy/source/cl5xgxxh6000y01mn5wdo8ydw"
+        description: "Source url",
+        example: "https://wwwx11.gogocdn.stream/videos/hls/WxUDti4tkwAmrtGldi_bHA/1659252376/188170/b5130f24fdc45958b378fa29fdb01a2c/ep.9.1657690095.m3u8"
     })
     url: string;
 
@@ -30,4 +30,22 @@ export default class Source {
         example: false
     })
     subtitle: boolean;
+
+    @ApiProperty({
+        description: "Sometimes the source website requires a `Referer` header in order to obtain the video file, this field is what you need to put for `Referer`",
+        example: undefined
+    })
+    referer: string | undefined;
+
+    @ApiProperty({
+        description: "Sometimes the source website requires special headers in order to obtain the video file, this field is what you need to put for those headers",
+        example: undefined
+    })
+    headers: object | undefined;
+
+    @ApiProperty({
+        description: "Due to CORS, some resources cannot be played by browsers, this field indicates whether the source can be safely played by browser. NOTE: If you are developing anything that's not a website then you can disregard this field",
+        example: true
+    })
+    browser: boolean
 }

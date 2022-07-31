@@ -76,7 +76,7 @@ export default class EpisodeController {
             }
         });
 
-        sources.sort((a, b) => a.priority < b.priority);
+        sources.sort((a, b) => a.priority - b.priority);
 
         return {
             ...episode,

@@ -41,6 +41,7 @@ export default class PopularController {
         if (!perPage || perPage <= 0) perPage = 20;
         perPage = Math.min(100, perPage);
 
+        // @ts-ignore
         const results = await this.popularPaginator<Prisma.Anime, Prisma.AnimeFindManyArgs>(this.databaseService.anime, {
             where: {
                 status: "RELEASING"

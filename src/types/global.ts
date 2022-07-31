@@ -1,3 +1,5 @@
+import { ISubtitle } from '../extractor/types';
+
 export interface WebsiteMeta {
     id: string;
     // Maybe more fields so we use a class here
@@ -26,7 +28,10 @@ export interface Episode {
 
 export interface RawSource {
     video?: string;
-    subtitle?: string;
+    subtitle?: ISubtitle[];
+    referer?: string;
+    headers?: object;
+    browser: boolean;
 }
 
 export enum SourceType {

@@ -1,10 +1,12 @@
-import Scraper from '../scraper';
+import Scraper, { USER_AGENT } from '../scraper';
 import * as cheerio from 'cheerio';
 import * as similarity from 'string-similarity';
 import { Episode, RawSource } from '../../types/global';
 import { clean, removeSpecialChars } from '../../helper/title';
 import fetch from 'node-fetch';
 import { deepMatch } from '../../helper/match';
+import StreamTape from '../../extractor/impl/streamtape';
+import RapidCloud from '../../extractor/impl/rapidcloud';
 
 export default class Zoro extends Scraper {
     override enabled = true;
@@ -13,59 +15,56 @@ export default class Zoro extends Scraper {
     override priority = 2;
     override consumetServiceUrl = "https://consumet-api.herokuapp.com/anime/zoro/";
 
-    private readonly host = 'https://rapid-cloud.ru';
-
     async getSourceConsumet(sourceUrl: string | URL): Promise<RawSource> {
         if (typeof sourceUrl === "string") sourceUrl = new URL(sourceUrl);
 
         let rawSource = (await (await fetch(`${this.consumetServiceUrl}${sourceUrl.pathname.replace("?ep=", "$episode$")}`)).json());
 
         let primarySource = rawSource.sources.find(source => source.quality === "auto");
+
+        if (!primarySource) return undefined;
+
         let subtitle = rawSource.subtitles.find(subtitle => subtitle.lang.toLowerCase() === "English");
 
         return {
             video: primarySource.url,
-            subtitle: subtitle.url
+            subtitle: subtitle?.url,
+            referer: rawSource.headers.Referer,
+            browser: true
         }
     }
 
-    async getRawSource(sourceUrl, referer) {
+    async getRawSource(sourceUrl, config) {
         if (!(sourceUrl instanceof URL)) sourceUrl = new URL(sourceUrl);
 
         const url = `${this.url()}/ajax/v2/episode/servers?episodeId=${sourceUrl.searchParams.get("ep")}`;
 
         let response = await fetch(url, {
-                headers: {
-                    Referer: sourceUrl.href,
-                }
+            headers: {
+                Referer: sourceUrl.href,
+            }
         });
 
         const $ = cheerio.load((await response.json()).html);
         const serverId = $('div.ps_-block.ps_-block-sub.servers-sub > div.ps__-list > div')
-            .map((i, el) => ($(el).attr('data-server-id') == '1' ? $(el) : null))
+            .map((i, el) => ($(el).attr("data-server-id") == "3" ? $(el) : null))
             .get()[0]
-            .attr('data-id')!;
+            .attr("data-id")!;
 
         if (!serverId) return undefined;
 
         response = await fetch(`${this.url()}/ajax/v2/episode/sources?id=${serverId}`);
 
-        const videoUrl = (await response.json()).link;
-        const id = videoUrl.split('/').pop()?.split('?')[0];
+        const videoUrl = new URL((await response.json()).link);
 
-        if (videoUrl.includes("rapid-cloud.ru")) {
-            response = await fetch(
-                `${this.host}/ajax/embed-6/getSources?id=${id}&sId=zIlsAXDw5t76TRyfhrDY`
-            );
-        }
-
-        const sourceData = await response.json();
-
-        if (!sourceData.sources?.length) return undefined;
+        const video = await (new RapidCloud(config.serverId).extract(videoUrl));
 
         return {
-            video: sourceData.sources[0].file,
-            subtitle: sourceData.tracks.find(track => track.label === "English").file
+            video: video.source.url,
+            m3u8: video.source.m3u8,
+            subtitle: video.subtitles,
+            referer: sourceUrl.href,
+            browser: true
         };
     }
 

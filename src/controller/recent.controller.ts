@@ -42,6 +42,7 @@ export default class RecentController {
         if (!perPage || perPage <= 0) perPage = 20;
         perPage = Math.min(100, perPage);
 
+        // @ts-ignore
         const recent = await this.episodePaginator<Prisma.Episode, Prisma.EpisodeFindManyArgs>(this.databaseService.episode, {
             orderBy: {
                 createdAt: "desc"
@@ -76,7 +77,9 @@ export default class RecentController {
             },
         }, { page: page, perPage: perPage })
 
+        // @ts-ignore
         recent.data = recent.data.filter(episode => episode.sources?.length).map(episode => {
+            // @ts-ignore
             const sources = episode.sources.map(source => {
                 return {
                     id: source.id,
