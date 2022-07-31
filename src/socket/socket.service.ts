@@ -19,16 +19,13 @@ export default class SocketService implements OnModuleInit {
                 this.serverId = JSON.parse(data.split("40")[1]).sid;
             } else if (data === "2") {
                 this.websocket.send("3");
-            } else if (data === "3") {
-                this.websocket.send("2");
             } else {
                 this.websocket.send("40");
             }
         });
 
         setInterval(() => {
-            this.websocket.send("2");
             this.websocket.send("3");
-        }, 1000);
+        }, 20000);
     }
 }
