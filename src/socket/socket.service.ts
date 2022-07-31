@@ -29,6 +29,6 @@ export default class SocketService implements OnModuleInit {
         setInterval(() => {
             this.websocket.send("2");
             this.websocket.send("3");
-        }, 5000);
+        }, 1000);
     }
 }
