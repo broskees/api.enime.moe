@@ -30,11 +30,12 @@ import ToolController from './controller/tool.controller';
 import SourceService from './source/source.service';
 import RapidCloudModule from './rapid-cloud/rapid-cloud.module';
 import EpisodeService from './episode/episode.service';
+import AdminModule from './admin/admin.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true
-  }), ScheduleModule.forRoot(), DatabaseModule, ScraperModule, InformationModule, HealthModule,
+  }), ScheduleModule.forRoot(), DatabaseModule, ScraperModule, InformationModule, AdminModule, HealthModule,
       CacheModule.register({
           store: redisStore,
           host: process.env.REDIS_HOST,

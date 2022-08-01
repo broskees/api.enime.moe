@@ -23,6 +23,13 @@ async function bootstrap() {
                 event: "resync",
                 data: trackingAnime
             });
+        } else if (event === "fetch-specific") {
+            Logger.debug("[InformationWorker] Start fetching a specific admin under administrator's request");
+            const updatedAnimeId = await service.fetchAnimeByAnilistID(data);
+            process.send({
+                event: "fetch-specific",
+                data: updatedAnimeId
+            });
         }
     });
 }

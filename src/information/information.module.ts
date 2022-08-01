@@ -1,4 +1,4 @@
-import { Logger, Module, OnModuleInit } from '@nestjs/common';
+import { Logger, Module, NotFoundException, OnModuleInit } from '@nestjs/common';
 import DatabaseService from '../database/database.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import ScraperService from '../scraper/scraper.service';
@@ -18,12 +18,11 @@ import ScraperModule from '../scraper/scraper.module';
     imports: [BullModule.registerQueue({
         name: "scrape"
     }), DatabaseModule],
-    providers: [InformationService, ProxyService, ScraperService]
+    providers: [InformationService, ProxyService, ScraperService],
+    exports: [InformationService]
 })
 export default class InformationModule implements OnModuleInit {
-    private informationWorker;
-
-    constructor(@InjectQueue("scrape") private readonly queue: Queue, private readonly databaseService: DatabaseService, private readonly scraperService: ScraperService) {
+    constructor(@InjectQueue("scrape") private readonly queue: Queue, private readonly databaseService: DatabaseService, private readonly informationService: InformationService, private readonly scraperService: ScraperService) {
         if (!process.env.TESTING) dayjs.extend(utc);
     }
 
@@ -31,44 +30,15 @@ export default class InformationModule implements OnModuleInit {
     async updateAnime() {
         Logger.debug("Now we start refetching currently releasing anime from Anilist");
         performance.mark("information-fetch-start");
-        if (!this.informationWorker) {
-            this.informationWorker = fork(path.resolve(__dirname, "./information-worker"));
 
-            this.informationWorker.on("message", async ({ event, data }) => {
-                if (event === "refetch") {
-                    const { created, updated } = data;
+        await this.informationService.initializeWorker();
 
-                    performance.mark("information-fetch-end");
-
-                    const animeIds = [...created, ...updated];
-                    Logger.debug(`Refetching completed, took ${performance.measure("information-fetch", "information-fetch-start", "information-fetch-end").duration.toFixed(2)}ms, created ${created.length} anime entries, updated ${updated.length} anime entries.`);
-
-                    await this.queue.add( { // Higher priority than the daily anime sync
-                        animeIds: animeIds,
-                        infoOnly: false
-                    }, {
-                        priority: 4,
-                        removeOnComplete: true
-                    });
-
-                    if (created.length) {
-                        await this.informationWorker.send({
-                            event: "resync",
-                            data: created
-                        });
-                    }
-                }
-            });
-        }
-
-        await this.informationWorker.send({
-            event: "refetch"
-        });
+        await this.informationService.executeWorker("refetch");
     }
 
     @Cron(CronExpression.EVERY_12_HOURS)
     async resyncAnime() {
-        await this.informationWorker.send("resync");
+        await this.informationService.executeWorker("resync");
     }
 
     // Every 10 minutes, we check anime that have don't have "enough episode" stored in the database (mostly the anime source sites update slower than Anilist because subs stuff) so we sync that part more frequently
