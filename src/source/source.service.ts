@@ -56,7 +56,7 @@ export default class SourceService {
             }
 
             videoUrl = rawSource.video;
-            subtitleUrl = rawSource.subtitle?.find(subtitle => subtitle.lang?.toLowerCase() === "English")?.url;
+            subtitleUrl = rawSource.subtitle?.find(subtitle => subtitle.lang?.toLowerCase() === "english")?.url;
             referer = rawSource.referer;
             headers = rawSource.headers;
             browser = rawSource.browser;
