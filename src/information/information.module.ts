@@ -17,8 +17,8 @@ import ScraperModule from '../scraper/scraper.module';
 @Module({
     imports: [BullModule.registerQueue({
         name: "scrape"
-    }), DatabaseModule, ScraperModule],
-    providers: [InformationService, ProxyService]
+    }), DatabaseModule],
+    providers: [InformationService, ProxyService, ScraperService]
 })
 export default class InformationModule implements OnModuleInit {
     private informationWorker;
