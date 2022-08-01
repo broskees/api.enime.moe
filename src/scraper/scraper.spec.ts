@@ -20,8 +20,8 @@ describe("Scraper Test", function () {
 
     it("Scraper", async () => {
         console.log("Reached 1")
-        const scraper = new GogoanimeScraper(application.get(ProxyService));
-        // const scraper = new Zoro(application.get(ProxyService));
+        // const scraper = new GogoanimeScraper(application.get(ProxyService));
+        const scraper = new Zoro(application.get(ProxyService));
 
         const anime = await application.get(ScraperModule).matchAnime( {
             "native": "彼女、お借りします",
@@ -30,8 +30,10 @@ describe("Scraper Test", function () {
             "userPreferred": "Kanojo, Okarishimasu"
         }, scraper);
 
-        console.log(await scraper.fetch(anime.path, 1, 1));
-        console.log(await scraper.getRawSource("https://goload.io/streaming.php?id=MTQyMTUy&title=Kanojo%2C+Okarishimasu+Episode+1"));
+        // console.log(await scraper.fetch(anime.path));
+        console.log(await scraper.getRawSource("https://zoro.to/watch/rent-a-girlfriend-2037?ep=24724", {
+            serverId: "J_QWKmoyOUtVKcWRquSa"
+        }));
 
 
 

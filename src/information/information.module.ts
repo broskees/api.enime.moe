@@ -146,5 +146,6 @@ export default class InformationModule implements OnModuleInit {
     }
 
     async onModuleInit() {
+        await this.pushToScrapeQueue()
     }
 }

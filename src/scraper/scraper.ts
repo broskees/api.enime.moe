@@ -1,4 +1,3 @@
-import ProxyService from '../proxy/proxy.service';
 import fetch from 'node-fetch';
 import { Episode, AnimeWebPage, WebsiteMeta, RawSource } from '../types/global';
 export const USER_AGENT =
@@ -13,7 +12,7 @@ export default abstract class Scraper {
 
     public websiteMeta: WebsiteMeta = undefined;
 
-    constructor(private readonly proxyService: ProxyService) {}
+    constructor() {}
 
     abstract name(): string;
 
@@ -38,10 +37,6 @@ export default abstract class Scraper {
     async get(url, headers = {}, proxy = false) {
         let agent = undefined;
 
-        if (proxy && process.env.WEBSHARE_API_KEY?.length > 0) {
-            agent = await this.proxyService.getProxyAgent();
-        }
-
         return fetch(url, {
             ...(proxy && {
                 agent: agent
@@ -55,10 +50,6 @@ export default abstract class Scraper {
 
     async post(url, headers = {}, body: any = undefined, proxy = false) {
         let agent = undefined;
-
-        if (proxy) {
-            agent = await this.proxyService.getProxyAgent();
-        }
 
         return fetch(url, {
             ...(proxy && {

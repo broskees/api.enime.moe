@@ -5,13 +5,12 @@ import { Episode, RawSource } from '../../types/global';
 import { clean, removeSpecialChars } from '../../helper/title';
 import fetch from 'node-fetch';
 import { deepMatch } from '../../helper/match';
-import StreamTape from '../../extractor/impl/streamtape';
 import RapidCloud from '../../extractor/impl/rapidcloud';
 
 export default class Zoro extends Scraper {
     override enabled = true;
-    override infoOnly = true;
-    override subtitle = false;
+    override infoOnly = false;
+    override subtitle = true;
     override priority = 2;
     override consumetServiceUrl = "https://consumet-api.herokuapp.com/anime/zoro/";
 
@@ -47,7 +46,7 @@ export default class Zoro extends Scraper {
 
         const $ = cheerio.load((await response.json()).html);
         const serverId = $('div.ps_-block.ps_-block-sub.servers-sub > div.ps__-list > div')
-            .map((i, el) => ($(el).attr("data-server-id") == "3" ? $(el) : null))
+            .map((i, el) => ($(el).attr("data-server-id") == "1" ? $(el) : null))
             .get()[0]
             .attr("data-id")!;
 

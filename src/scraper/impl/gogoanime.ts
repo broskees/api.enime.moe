@@ -33,6 +33,7 @@ export default class GogoanimeScraper extends Scraper {
 
         return {
             video: video.url,
+            referer: url.href,
             browser: true
         }
     }

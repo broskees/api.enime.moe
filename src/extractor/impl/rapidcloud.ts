@@ -15,10 +15,6 @@ class RapidCloud extends VideoExtractor {
     }
 
     override extract = async (videoUrl: URL): Promise<{ source: IVideo } & { subtitles: ISubtitle[] }> => {
-        const result: { source: IVideo; subtitles: ISubtitle[] } = {
-            source: undefined,
-            subtitles: [],
-        };
         try {
             const id = videoUrl.href.split('/').pop()?.split('?')[0];
             const options = {
@@ -50,16 +46,12 @@ class RapidCloud extends VideoExtractor {
                 options
             )).json()  ;
 
-            const {
-                data: { sources, tracks },
-            } = res;
-
             return {
                 source: {
-                    url: sources[0].file,
-                    m3u8: sources[0].file.includes(".m3u8"),
+                    url: res.sources[0].file,
+                    m3u8: res.sources[0].file.includes(".m3u8"),
                 },
-                subtitles: tracks.map((s: any) => ({
+                subtitles: res.tracks.map((s: any) => ({
                     url: s.file,
                     lang: s.label ? s.label : "Default (maybe)",
                 }))

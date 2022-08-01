@@ -24,20 +24,24 @@ import SearchController from './controller/search.controller';
 import DatabaseModule from './database/database.module';
 import PopularController from './controller/popular.controller';
 import StatsController from './controller/stats.controller';
-import SocketModule from './socket/socket.module';
 import SourceController from './controller/source.controller';
-import SocketService from './socket/socket.service';
+import RapidCloudService from './rapid-cloud/rapid-cloud.service';
+import ToolController from './controller/tool.controller';
+import SourceService from './source/source.service';
+import RapidCloudModule from './rapid-cloud/rapid-cloud.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true
-  }), ScheduleModule.forRoot(), SocketModule, DatabaseModule, ScraperModule, InformationModule, HealthModule,
+  }), ScheduleModule.forRoot(), DatabaseModule, ScraperModule, InformationModule, HealthModule,
       CacheModule.register({
           store: redisStore,
           host: process.env.REDIS_HOST,
           port: Number(process.env.REDIS_PORT),
           password: process.env.REDIS_PASSWORD,
+          isGlobal: true
       }),
+      RapidCloudModule,
       BullModule.forRoot({
         redis: {
           host: process.env.REDIS_HOST,
@@ -55,8 +59,8 @@ import SocketService from './socket/socket.service';
           }),
       })
   ],
-  controllers: [AppController, AnimeController, SourceController, StatsController, ProxyController, RecentController, SearchController, EpisodeController, PopularController],
-  providers: [AppService, DatabaseService, ProxyService, SocketService, ScraperService,
+  controllers: [AppController, AnimeController, SourceController, ToolController, StatsController, ProxyController, RecentController, SearchController, EpisodeController, PopularController],
+  providers: [AppService, DatabaseService, ProxyService, RapidCloudService, ScraperService, SourceService,
       {
           provide: APP_GUARD,
           useClass: ThrottlerBehindProxyGuard,
