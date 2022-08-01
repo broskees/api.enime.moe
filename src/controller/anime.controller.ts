@@ -1,73 +1,34 @@
 import { CacheTTL, Controller, Get, NotFoundException, Param, UseInterceptors } from '@nestjs/common';
 import DatabaseService from '../database/database.service';
 import { SkipThrottle } from '@nestjs/throttler';
-import cuid from 'cuid';
 import { clearAnimeField } from '../helper/model';
-import { ApiExcludeEndpoint, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {  ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import Anime from '../entity/anime.entity';
+import Episode from '../entity/episode.entity';
+import EpisodeService from '../episode/episode.service';
 
 @SkipThrottle()
 @Controller("/anime")
 @ApiTags("anime")
 export default class AnimeController {
-    constructor(private readonly databaseService: DatabaseService) {
+    constructor(private readonly databaseService: DatabaseService, private readonly episodeService: EpisodeService) {
     }
 
-    /*
-    @Get()
-    @ApiOperation({ operationId: "List anime", summary: "List all anime available in the service", deprecated: true })
+    @Get(":animeId/:episodeNumber")
+    @ApiOperation({ operationId: "Get episode with anime ID and episode number", summary: "Get an episode object with provided anime ID and episode number" })
     @ApiResponse({
         status: 200,
-        description: "All anime objects in the service",
-        type: Anime,
-        isArray: true
+        description: "The found episode object with the ID provided",
+        type: Episode
     })
-    @CacheTTL(600)
-    async all(): Promise<Anime[]> {
-        const all = await this.databaseService.anime.findMany({
-            include: {
-                genre: {
-                    select: {
-                        name: true
-                    }
-                },
-                episodes: {
-                    select: {
-                        id: true,
-                        number: true,
-                        title: true,
-                        sources: {
-                            select: {
-                                id: true
-                            }
-                        }
-                    },
-                }
-            }
-        });
-
-        // @ts-ignore
-        return all.map(anime => {
-            delete anime["title_english"];
-            delete anime["title_romaji"];
-
-            return {
-                ...anime,
-                genre: anime.genre.map(g => g.name),
-                episodes: anime.episodes.map(episode => {
-                    return {
-                        ...episode,
-                        sources: episode.sources.map(source => {
-                            return {
-                                ...source,
-                                url: `https://api.enime.moe/proxy/source/${source.id}`
-                            }
-                        })
-                    }
-                })
-            }
-        });
-    }*/
+    @ApiResponse({
+        status: 404,
+        description: "The episode cannot be found within the database for given ID"
+    })
+    @CacheTTL(300)
+    async getEpisode(@Param("animeId") animeId: string, @Param("episodeNumber") episodeNumber: number) {
+        return this.episodeService.getEpisodeByAnimeId(animeId, episodeNumber);
+    }
 
     @Get(":id")
     @ApiOperation({ operationId: "Get anime", summary: "Get an anime object in the service with ID or slug" })

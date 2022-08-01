@@ -29,6 +29,7 @@ import RapidCloudService from './rapid-cloud/rapid-cloud.service';
 import ToolController from './controller/tool.controller';
 import SourceService from './source/source.service';
 import RapidCloudModule from './rapid-cloud/rapid-cloud.module';
+import EpisodeService from './episode/episode.service';
 
 @Module({
   imports: [ConfigModule.forRoot({
@@ -60,7 +61,7 @@ import RapidCloudModule from './rapid-cloud/rapid-cloud.module';
       })
   ],
   controllers: [AppController, AnimeController, SourceController, ToolController, StatsController, ProxyController, RecentController, SearchController, EpisodeController, PopularController],
-  providers: [AppService, DatabaseService, ProxyService, RapidCloudService, ScraperService, SourceService,
+  providers: [AppService, DatabaseService, ProxyService, RapidCloudService, ScraperService, EpisodeService, SourceService,
       {
           provide: APP_GUARD,
           useClass: ThrottlerBehindProxyGuard,
