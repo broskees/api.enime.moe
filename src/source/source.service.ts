@@ -56,20 +56,25 @@ export default class SourceService {
             }
 
             videoUrl = rawSource.video;
-            subtitleUrl = rawSource.subtitle;
+            subtitleUrl = rawSource.subtitle?.find(subtitle => subtitle.lang?.toLowerCase() === "English")?.url;
             referer = rawSource.referer;
             headers = rawSource.headers;
+            browser = rawSource.browser;
         }
 
-        return {
+        const sourceObject = {
             id: source.id,
             url: videoUrl,
             subtitle: subtitleUrl,
             referer: referer,
             headers: headers,
             priority: source.website.priority,
-            browser: source.browser,
-            website: source.website.url,
+            browser: browser,
+            website: source.website.url
         };
+
+        await this.cacheManager.set(cacheKey, JSON.stringify(sourceObject), { ttl: 60 * 60 * 4 }); // 4 hour cache (actual expiry time is ~6 hours but just in case)
+
+        return sourceObject;
     }
 }

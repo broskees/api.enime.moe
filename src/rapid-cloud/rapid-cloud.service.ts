@@ -2,7 +2,7 @@ import { CACHE_MANAGER, Inject, Injectable, OnModuleInit } from '@nestjs/common'
 import WebSocket from 'ws';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Cache } from 'cache-manager';
-import { RawSource } from '../types/global';
+import Source from '../entity/source.entity';
 
 @Injectable()
 export default class RapidCloudService implements OnModuleInit {
@@ -27,8 +27,8 @@ export default class RapidCloudService implements OnModuleInit {
                 let data = await this.cacheManager.get(key);
                 try {
                     if (typeof data === "string") {
-                        let parsedSource: RawSource = JSON.parse(data);
-                        if (parsedSource.video.includes("betterstream")) await this.cacheManager.del(key);
+                        let parsedSource: Source = JSON.parse(data);
+                        if (parsedSource.url.includes("betterstream")) await this.cacheManager.del(key);
                     }
                 } catch (e) {
                     // Not json, pass
@@ -47,7 +47,6 @@ export default class RapidCloudService implements OnModuleInit {
         this.websocket.on("message", (data: string) => {
             data = data.toString();
             if (data?.startsWith("40")) {
-                console.log(data)
                 this.serverId = JSON.parse(data.split("40")[1]).sid;
             } else if (data === "2") {
                 this.websocket.send("3");

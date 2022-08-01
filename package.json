@@ -39,6 +39,7 @@
     "@nestjs/throttler": "^3.0.0",
     "@nestjs/websockets": "^9.0.7",
     "@prisma/client": "^4.1.0",
+    "ascii-url-encoder": "^1.2.0",
     "aws-sdk": "^2.1180.0",
     "bull": "^4.8.4",
     "cache-manager": "^4.1.0",

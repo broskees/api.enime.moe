@@ -38,6 +38,7 @@ specifiers:
   '@types/supertest': ^2.0.11
   '@typescript-eslint/eslint-plugin': ^5.0.0
   '@typescript-eslint/parser': ^5.0.0
+  ascii-url-encoder: ^1.2.0
   aws-sdk: ^2.1180.0
   bull: ^4.8.4
   cache-manager: ^4.1.0
@@ -103,6 +104,7 @@ dependencies:
   '@nestjs/throttler': 3.0.0_zysgbzrbqurgi5bpxpfkrj3lie
   '@nestjs/websockets': 9.0.7_dutdr4et723rx6z2ndlvzkjwd4
   '@prisma/client': 4.1.0_prisma@4.1.0
+  ascii-url-encoder: 1.2.0
   aws-sdk: 2.1180.0
   bull: 4.8.4
   cache-manager: 4.1.0
@@ -2374,6 +2376,10 @@ packages:
   /asap/2.0.6:
     resolution: {integrity: sha512-BSHWgDSAiKs50o2Re8ppvp3seVHXSRM44cdSsT9FfNEUUZLOGWVCsiWaRPWM1Znn+mqZ1OfVZ3z3DWEzSp7hRA==}
     dev: true
+
+  /ascii-url-encoder/1.2.0:
+    resolution: {integrity: sha512-jRQMrz1ZqL7gnK60Xbu1S8kDi01UN+lHBnhvXZZqjd7nms7t4jOv4o9nE8bbfDh1Ts/KEtW2nXGR5CmydDBmlw==}
+    dev: false
 
   /assertion-error/1.1.0:
     resolution: {integrity: sha512-jgsaNduz+ndvGyFt3uSuWqvy4lCnIJiovtouQN5JZHOKCS2QuhEdbcQHFhVksz2N2U9hXJo8odG7ETyWlEeuDw==}

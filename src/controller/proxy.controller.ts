@@ -24,7 +24,7 @@ export default class ProxyController {
     @NoCache()
     async sourceSubtitleProxy(@Param("id") id, @Res() res) {
         id = id.replace(/\.[^/.]+$/, "");
-        const rawSource = await this.sourceService.getRawSource(id);
+        const rawSource = await this.sourceService.getSource(id);
 
         return res.redirect(302, rawSource.subtitle);
     }
@@ -34,8 +34,8 @@ export default class ProxyController {
     @NoCache()
     async sourceProxy(@Param("id") id, @Res() res) {
         id = id.replace(/\.[^/.]+$/, "");
-        const rawSource = await this.sourceService.getRawSource(id);
+        const rawSource = await this.sourceService.getSource(id);
 
-        return res.redirect(302, rawSource.video);
+        return res.redirect(302, rawSource.url);
     }
 }
