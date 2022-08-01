@@ -22,14 +22,14 @@ describe("Scraper Test", function () {
     it("Scraper", async () => {
         console.log("Reached 1")
         // const scraper = new GogoanimeScraper(application.get(ProxyService));
-        // const scraper = new Zoro(application.get(ProxyService));
-        const scraper = new NineAnimeScraper();
+        const scraper = new Zoro();
+        // const scraper = new NineAnimeScraper();
 
         const anime = await application.get(ScraperModule).matchAnime( {
-            "native": "彼女、お借りします",
-            "romaji": "Kanojo, Okarishimasu",
-            "english": "Rent-a-Girlfriend",
-            "userPreferred": "Kanojo, Okarishimasu"
+            "native": "ようこそ実力至上主義の教室へ 2nd Season",
+            "romaji": "Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e 2nd Season",
+            "english": "Classroom of the Elite Season 2",
+            "userPreferred": "Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e 2nd Season"
         }, scraper);
 
         console.log(anime)
@@ -37,7 +37,7 @@ describe("Scraper Test", function () {
 
 
         //console.log(await scraper.fetch("/komi-san-wa-comyushou-desu-2nd-season-17975"))
-        //await scraper.fetch(anime.path, 1);
+        console.log(await scraper.fetch(anime.path));
     }).timeout(0);
 
 });

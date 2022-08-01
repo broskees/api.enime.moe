@@ -18,7 +18,8 @@ import DatabaseModule from '../database/database.module';
         name: "scrape",
         processors: [fs.existsSync(path.join(__dirname, "scraper-processor.js")) ? path.join(__dirname, "scraper-processor.js") : path.join(__dirname, "scraper-processor.ts")]
     }), DatabaseModule, InformationModule],
-    providers: [ScraperService, ProxyService]
+    providers: [ScraperService, ProxyService],
+    exports: [ScraperService]
 })
 export default class ScraperModule implements OnModuleInit {
     constructor() {

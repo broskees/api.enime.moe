@@ -12,17 +12,18 @@ import InformationService from './information.service';
 import { Queue } from 'bull';
 import ProxyService from '../proxy/proxy.service';
 import DatabaseModule from '../database/database.module';
+import ScraperModule from '../scraper/scraper.module';
 
 @Module({
     imports: [BullModule.registerQueue({
         name: "scrape"
-    }), DatabaseModule],
-    providers: [InformationService, ScraperService, ProxyService]
+    }), DatabaseModule, ScraperModule],
+    providers: [InformationService, ProxyService]
 })
 export default class InformationModule implements OnModuleInit {
     private informationWorker;
 
-    constructor(@InjectQueue("scrape") private readonly queue: Queue, private readonly databaseService: DatabaseService) {
+    constructor(@InjectQueue("scrape") private readonly queue: Queue, private readonly databaseService: DatabaseService, private readonly scraperService: ScraperService) {
         if (!process.env.TESTING) dayjs.extend(utc);
     }
 
@@ -90,8 +91,10 @@ export default class InformationModule implements OnModuleInit {
             }
         });
 
+        const scrapers = await this.scraperService.scrapers();
+
         await this.queue.add( { // Episode number are unique values, we can safely assume "if the current episode progress count is not even equal to the amount of episodes we have in database, the anime entry should be outdated"
-            animeIds: animeList.filter(anime => anime.currentEpisode !== anime.episodes.filter(episode => episode.sources.length > 0).length).map(anime => anime.id),
+            animeIds: animeList.filter(anime => anime.currentEpisode !== anime.episodes.filter(episode => episode.sources.length < scrapers.filter(scraper => !scraper.infoOnly && scraper.enabled).length).length).map(anime => anime.id),
             infoOnly: false
         }, {
             priority: 6,

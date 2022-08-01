@@ -32,6 +32,8 @@ export default class SourceService {
             }
         });
 
+        if (!source) throw new NotFoundException("Cannot find the source with given ID");
+
         let videoUrl, subtitleUrl, referer, headers, browser = false;
 
         if (source.type === "DIRECT") { // No need to proxy the request, redirect to raw source directly
