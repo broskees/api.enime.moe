@@ -48,6 +48,7 @@ model Anime {
     averageScore        Int?
     popularity          Int?
     color               String?
+    year                Int?
 
     // Exists solely for search purpose
     title_english       String?

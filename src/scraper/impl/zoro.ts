@@ -168,7 +168,7 @@ export default class Zoro extends Scraper {
                 if (!alt) continue;
 
                 for (let result of results) {
-                    if (deepMatch(alt, result.title)) {
+                    if (deepMatch(alt, result.title, false)) {
                         return result;
                     }
                 }
@@ -189,7 +189,7 @@ export default class Zoro extends Scraper {
                 }
             }
 
-            if (highestEntry && deepMatch(highestEntryUsedTitle, highestEntry.title)) pass = true;
+            if (highestEntry && deepMatch(highestEntryUsedTitle, highestEntry.title, true, 0.95)) pass = true;
         }
 
         if (!pass) return undefined;

@@ -44,6 +44,12 @@ export default class Anime {
     season: "FALL" | "SUMMER" | "WINTER" | "SPRING";
 
     @ApiProperty({
+        description: "Year the anime was released",
+        example: 2022
+    })
+    year: number;
+
+    @ApiProperty({
         description: "Anime title",
         example: {
             "native": "リコリス・リコイル",

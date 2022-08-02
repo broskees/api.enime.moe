@@ -26,10 +26,10 @@ describe("Scraper Test", function () {
         // const scraper = new NineAnimeScraper();
 
         const anime = await application.get(ScraperModule).matchAnime( {
-            "native": "遊☆戯☆王ゴーラッシュ!!",
-            "romaji": "Yu☆Gi☆Oh! Go Rush!!",
-            "english": null,
-            "userPreferred": "Yu☆Gi☆Oh! Go Rush!!"
+            "native": "まちカドまぞく 2丁目",
+            "romaji": "Machikado Mazoku: 2-Choume",
+            "english": "The Demon Girl Next Door Season 2",
+            "userPreferred": "Machikado Mazoku: 2-Choume"
         }, scraper);
 
         console.log(anime)

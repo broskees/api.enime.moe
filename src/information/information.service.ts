@@ -166,12 +166,13 @@ export default class InformationService implements OnModuleInit {
             status: anilistAnime.status,
             season: anilistAnime.season,
             seasonInt: anilistAnime.seasonInt,
+            year: anilistAnime.seasonYear,
             next: nextEpisode,
             genre: {
                 connectOrCreate: anilistAnime.genres.map(genre => {
                     return {
-                        where: {name: genre},
-                        create: {name: genre}
+                        where: { name: genre },
+                        create: { name: genre }
                     }
                 })
             },

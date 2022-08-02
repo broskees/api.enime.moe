@@ -3,7 +3,7 @@ export function clean(title) {
 }
 
 export function removeSpecialChars(title) {
-    return title.replaceAll(/[^A-Za-z0-9!@#$%^&*() ]/gmi, " ").replaceAll(/[^A-Za-z0-9 ]/gmi, "").replaceAll("  ", " ");
+    return title.replaceAll(/[^A-Za-z0-9!@#$%^&*()\-= ]/gmi, " ").replaceAll(/[^A-Za-z0-9\-= ]/gmi, "").replaceAll("  ", " ");
 }
 
 export function transformSpecificVariations(title) {

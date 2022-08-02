@@ -34,6 +34,20 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
             return;
         }
 
+        let malSyncData;
+
+        // @ts-ignore
+        if (anime.mappings.mal) {
+            // @ts-ignore
+            malSyncData = await fetch(`https://api.malsync.moe/mal/anime/${anime.mappings.mal}`);
+
+            try {
+                malSyncData = (await malSyncData.json())?.Sites
+            } catch (e) {
+
+            }
+        }
+
         try {
             for (let scraper of await scraperService.scrapers()) {
                 if (infoOnly && !scraper.infoOnly) continue;
@@ -41,8 +55,26 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                 const title = anime.title;
                 title["synonyms"] = anime.synonyms;
 
-                let matchedAnimeEntry = await scraperModule.matchAnime(anime.title, scraper);
 
+                let matchedAnimeEntry;
+
+                if (malSyncData) {
+                    const scraperKey = Object.keys(malSyncData).find(key => key.toLowerCase() === scraper.name().toLowerCase());
+                    if (scraperKey && malSyncData[scraperKey]) {
+                        const entryKey = Object.keys(malSyncData[scraperKey]).find(key => !key.includes("dub"));
+
+                        if (entryKey) {
+                            let malSyncEntry = malSyncData[scraperKey][entryKey];
+
+                            matchedAnimeEntry = {
+                                title: malSyncEntry.title,
+                                path: (new URL(malSyncEntry.url)).pathname
+                            }
+                        }
+                    }
+                }
+
+                if (!matchedAnimeEntry) matchedAnimeEntry = await scraperModule.matchAnime(anime.title, scraper);
                 if (!matchedAnimeEntry) continue;
 
                 let episodeToScrapeLower = Number.MAX_SAFE_INTEGER, episodeToScraperHigher = Number.MIN_SAFE_INTEGER;
@@ -124,9 +156,10 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                             let url = scrapedEpisode.url;
                             let scrapedEpisodeId = cuid();
 
-                            let scrapedEpisodeDb = await databaseService.source.findUnique({
+                            let scrapedEpisodeDb = await databaseService.source.findFirst({
                                 where: {
-                                    url: url
+                                    episodeId: episodeDb.id,
+                                    websiteId: scraper.websiteMeta.id
                                 }
                             });
 
