@@ -140,6 +140,7 @@ export default class Zoro extends Scraper {
             });
         });
 
+        console.log(results)
         if (!results.length) return undefined;
 
         // Zoro.to has a weird search that it's not ranked exactly by relevance. So what we're going to do here is to find all results from first page (relevance based)

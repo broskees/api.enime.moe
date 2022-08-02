@@ -7,6 +7,7 @@ import cuid from 'cuid';
 import dayjs from 'dayjs';
 import DatabaseService from '../database/database.service';
 import ScraperService from './scraper.service';
+import fetch from 'node-fetch';
 
 export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
     const app = await NestFactory.create(ScraperModule);
@@ -15,6 +16,8 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
     let databaseService = app.select(ScraperModule).get(DatabaseService);
 
     const { animeIds: ids, infoOnly } = job.data;
+
+    const updated = [];
 
     let progress = 0;
     for (let id of ids) {
@@ -115,8 +118,6 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
 
                                 Logger.debug(`Updated an anime with episode title ${episodeDb.title} #${scrapedEpisode.number} under ID ${anime.id}`);
                             }
-
-                            Logger.debug(`No title for anime with ID ${anime.id} to update`);
                         }
 
                         if (!infoOnly && !scraper.infoOnly) {
@@ -149,6 +150,15 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                                 })
                             }
 
+                            updated.push({
+                                // @ts-ignore
+                                anime: title.userPreferred,
+                                episodeTitle: episodeDb.title,
+                                episodeNumber: episodeDb.number,
+                                episodeId: episodeDb.id,
+                                source: scraper.name()
+                            });
+
                             Logger.debug(`Updated an anime with episode number ${episodeDb.number} under ID ${anime.id}`);
                             await databaseService.anime.update({
                                 where: {
@@ -162,12 +172,36 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                     }
                 } catch (e) {
                     Logger.error(`Error with anime ID ${anime.id} with scraper on url ${scraper.url()}, skipping this job`, e);
-                    continue;
                 }
             }
         } catch (e) {
             Logger.error(e);
             Logger.error(e.stack);
+        }
+
+        if (updated.length) {
+            await fetch(process.env.DISCORD_WEBHOOK_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    "content": `There ${updated.length === 1 ? "is an update" : "are multiple updates"} to the Enime database`,
+                    "headers": {"Content-Type": "application/json"},
+                    "embeds": updated.map(update => {
+                        return {
+                            "title": `${update.anime} Episode ${update.episodeNumber} ${update.episodeTitle ? `- ${update.episodeTitle}` : ""}`,
+                            "description": `You can watch it directly on [enime.moe](https://enime.moe/watch/${update.episodeId}) site as well!`,
+                            "url": `https://api.enime.moe/episode/${update.episodeId}`,
+                            "color": 15198183,
+                            "author": {
+                                "name": `Provided by ${update.source}`
+                            },
+                            "footer": {
+                                "text": "Enime Project"
+                            },
+                            "timestamp": new Date().toISOString()
+                        }
+                    }),
+                })
+            })
         }
 
         progress++;

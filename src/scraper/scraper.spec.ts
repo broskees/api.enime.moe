@@ -26,10 +26,10 @@ describe("Scraper Test", function () {
         // const scraper = new NineAnimeScraper();
 
         const anime = await application.get(ScraperModule).matchAnime( {
-            "native": "ようこそ実力至上主義の教室へ 2nd Season",
-            "romaji": "Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e 2nd Season",
-            "english": "Classroom of the Elite Season 2",
-            "userPreferred": "Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e 2nd Season"
+            "native": "遊☆戯☆王ゴーラッシュ!!",
+            "romaji": "Yu☆Gi☆Oh! Go Rush!!",
+            "english": null,
+            "userPreferred": "Yu☆Gi☆Oh! Go Rush!!"
         }, scraper);
 
         console.log(anime)
@@ -37,7 +37,7 @@ describe("Scraper Test", function () {
 
 
         //console.log(await scraper.fetch("/komi-san-wa-comyushou-desu-2nd-season-17975"))
-        console.log(await scraper.fetch(anime.path));
+        // console.log(await scraper.fetch(anime.path));
     }).timeout(0);
 
 });
