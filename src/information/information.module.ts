@@ -101,7 +101,7 @@ export default class InformationModule implements OnModuleInit {
         const eligibleToScrape = await this.databaseService.anime.findMany({
             where: {
                 status: {
-                    in: ["RELEASING", "FINISHED"]
+                    in: ["RELEASING"]
                 }
             },
             select: {

@@ -147,27 +147,27 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                                         format: scrapedEpisode.format,
                                         referer: scrapedEpisode.referer?.trim()
                                     }
+                                });
+
+                                updated.push({
+                                    // @ts-ignore
+                                    anime: title.userPreferred,
+                                    episodeTitle: episodeDb.title,
+                                    episodeNumber: episodeDb.number,
+                                    episodeId: episodeDb.id,
+                                    source: scraper.name()
+                                });
+
+                                Logger.debug(`Updated an anime with episode number ${episodeDb.number} under ID ${anime.id}`);
+                                await databaseService.anime.update({
+                                    where: {
+                                        id: anime.id
+                                    },
+                                    data: {
+                                        lastEpisodeUpdate: dayjs().toISOString()
+                                    }
                                 })
                             }
-
-                            updated.push({
-                                // @ts-ignore
-                                anime: title.userPreferred,
-                                episodeTitle: episodeDb.title,
-                                episodeNumber: episodeDb.number,
-                                episodeId: episodeDb.id,
-                                source: scraper.name()
-                            });
-
-                            Logger.debug(`Updated an anime with episode number ${episodeDb.number} under ID ${anime.id}`);
-                            await databaseService.anime.update({
-                                where: {
-                                    id: anime.id
-                                },
-                                data: {
-                                    lastEpisodeUpdate: dayjs().toISOString()
-                                }
-                            })
                         }
                     }
                 } catch (e) {
@@ -179,33 +179,45 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
             Logger.error(e.stack);
         }
 
-        if (updated.length) {
-            await fetch(process.env.DISCORD_WEBHOOK_URL, {
-                method: "POST",
-                body: JSON.stringify({
-                    "content": `There ${updated.length === 1 ? "is an update" : "are multiple updates"} to the Enime database`,
-                    "headers": {"Content-Type": "application/json"},
-                    "embeds": updated.map(update => {
-                        return {
-                            "title": `${update.anime} Episode ${update.episodeNumber} ${update.episodeTitle ? `- ${update.episodeTitle}` : ""}`,
-                            "description": `You can watch it directly on [enime.moe](https://enime.moe/watch/${update.episodeId}) site as well!`,
-                            "url": `https://api.enime.moe/episode/${update.episodeId}`,
-                            "color": 15198183,
-                            "author": {
-                                "name": `Provided by ${update.source}`
-                            },
-                            "footer": {
-                                "text": "Enime Project"
-                            },
-                            "timestamp": new Date().toISOString()
-                        }
-                    }),
-                })
-            })
-        }
-
         progress++;
         await job.progress(progress);
+    }
+
+    if (updated.length) {
+        const groupedUpdates = updated.reduce(function (r, a) {
+            r[a.source] = r[a.source] || [];
+            r[a.source].push(a);
+            return r;
+        }, {});
+
+        let res = await fetch(process.env.DISCORD_WEBHOOK_URL, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                "content": `There ${updated.length === 1 ? "is an update" : "are multiple updates"} to the Enime database`,
+                "embeds": Object.keys(groupedUpdates).map(source => {
+                    const updates = groupedUpdates[source];
+
+                    return {
+                        "description": updates.map(update => {
+                            return `${update.anime} Episode ${update.episodeNumber} ${update.episodeTitle ? `- ${update.episodeTitle}` : ""} (Watch it [here](https://enime.moe/watch/${update.episodeId}) on Enime.moe)`
+                        }).join("\n"),
+                        "url": `https://api.enime.moe`,
+                        "color": 15198183,
+                        "author": {
+                            "name": `Provided by ${source || "Unknown"}`
+                        },
+                        "footer": {
+                            "text": "Enime Project"
+                        },
+                        "timestamp": new Date().toISOString(),
+                        "fields": []
+                    }
+                }),
+            })
+        })
+
+        console.log(await res.json())
     }
 
     cb(null, "Done");
