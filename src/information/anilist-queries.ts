@@ -28,6 +28,7 @@ query ($id: Int, $page: Int) {
       }
       seasonInt
       status
+      seasonYear
       season
       format
       genres

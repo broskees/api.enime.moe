@@ -41,6 +41,19 @@ export default class AdminController {
         };
     }
 
+    @Get("/resync-anilist-information")
+    @NoCache()
+    async resyncAnilistInformation() {
+        const animeList = await this.databaseService.anime.findMany();
+        for (let anime of animeList) {
+            if (Object.values(anime).some(value => value === null || value === undefined)) {
+                await this.informationService.fetchAnimeByAnilistID(anime.anilistId);
+            }
+        }
+
+        return "Done";
+    }
+
     @Get("/fix-mapping")
     @NoCache()
     async fixMapping() {

@@ -219,7 +219,7 @@ export default class InformationService implements OnModuleInit {
                 animeDbUpdateId = animeDb.id;
             }
 
-            this.databaseService.anime.update({
+            await this.databaseService.anime.update({
                 where: {
                     anilistId: anilistAnime.id
                 },
