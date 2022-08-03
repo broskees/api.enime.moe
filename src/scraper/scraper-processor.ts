@@ -61,7 +61,7 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                 if (malSyncData) {
                     const scraperKey = Object.keys(malSyncData).find(key => key.toLowerCase() === scraper.name().toLowerCase());
                     if (scraperKey && malSyncData[scraperKey]) {
-                        const entryKey = Object.keys(malSyncData[scraperKey]).find(key => !key.includes("dub"));
+                        const entryKey = Object.keys(malSyncData[scraperKey]).find(key => !key.includes("dub") && !key.includes("uncensored"));
 
                         if (entryKey) {
                             let malSyncEntry = malSyncData[scraperKey][entryKey];
