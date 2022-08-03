@@ -20,7 +20,6 @@ import ScraperService from './scraper/scraper.service';
 import { EnimeCacheInterceptor } from './cache/enime-cache.interceptor';
 import EpisodeController from './controller/episode.controller';
 import RecentController from './controller/recent.controller';
-import SearchController from './controller/search.controller';
 import DatabaseModule from './database/database.module';
 import PopularController from './controller/popular.controller';
 import StatsController from './controller/stats.controller';
@@ -31,11 +30,12 @@ import SourceService from './source/source.service';
 import RapidCloudModule from './rapid-cloud/rapid-cloud.module';
 import EpisodeService from './episode/episode.service';
 import AdminModule from './admin/admin.module';
+import SearchModule from './search/search.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true
-  }), ScheduleModule.forRoot(), DatabaseModule, ScraperModule, InformationModule, AdminModule, HealthModule,
+  }), ScheduleModule.forRoot(), DatabaseModule, SearchModule.register(), ScraperModule, InformationModule, AdminModule, HealthModule,
       CacheModule.register({
           store: redisStore,
           host: process.env.REDIS_HOST,
@@ -61,7 +61,7 @@ import AdminModule from './admin/admin.module';
           }),
       })
   ],
-  controllers: [AppController, AnimeController, SourceController, ToolController, StatsController, ProxyController, RecentController, SearchController, EpisodeController, PopularController],
+  controllers: [AppController, AnimeController, SourceController, ToolController, StatsController, ProxyController, RecentController, EpisodeController, PopularController],
   providers: [AppService, DatabaseService, ProxyService, RapidCloudService, ScraperService, EpisodeService, SourceService,
       {
           provide: APP_GUARD,
