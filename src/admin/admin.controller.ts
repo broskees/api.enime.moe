@@ -42,6 +42,7 @@ export default class AdminController {
     }
 
     @Get("/fix-mapping")
+    @NoCache()
     async fixMapping() {
         const episodes = await this.wrongMappedEpisodes();
 
@@ -87,6 +88,7 @@ export default class AdminController {
     }
 
     @Get("/refetch-all-anime")
+    @NoCache()
     async refetchAllAnime() {
         const animeIds = await this.databaseService.anime.findMany({
             select: {
@@ -101,5 +103,7 @@ export default class AdminController {
             priority: 5,
             removeOnComplete: true
         });
+
+        return "Done";
     }
 }
