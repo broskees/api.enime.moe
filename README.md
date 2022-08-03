@@ -34,4 +34,5 @@ REDIS_PASSWORD={Redis password}
 
 ## Credit
 - https://github.com/consumet/consumet.ts - Some of the scraper logic from various anime sites
+- https://github.com/consumet/consumet-api - Used as a backup scraper
 - https://github.com/AniAPI-Team/AniAPI - Inspiration, as well as a bit of the Gogoanime scraping logic
