@@ -34,6 +34,11 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
             return;
         }
 
+        if (anime.status === "NOT_YET_RELEASED") {
+            Logger.debug(`Scraper queue detected an ID ${id} is not yet released, skipping this job.`);
+            return;
+        }
+
         let malSyncData;
 
         // @ts-ignore

@@ -91,6 +91,11 @@ export default class AdminController {
     @NoCache()
     async refetchAllAnime() {
         const animeIds = await this.databaseService.anime.findMany({
+            where: {
+                status: {
+                    not: "NOT_YET_RELEASED"
+                }
+            },
             select: {
                 id: true
             }
