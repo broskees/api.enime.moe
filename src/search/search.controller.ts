@@ -21,7 +21,7 @@ export default class SearchController {
 
     @Get(":query")
     @CacheTTL(300)
-    @Throttle(5, 60)
+    @Throttle(90, 60)
     @ApiOperation({ operationId: "Search Anime", summary: "Search anime based on query" })
     @ApiResponse({
         status: 200,
