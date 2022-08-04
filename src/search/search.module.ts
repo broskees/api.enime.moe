@@ -6,11 +6,12 @@ import SearchController from './search.controller';
 
 @Module({
     imports: [DatabaseModule],
-    providers: [SearchService],
+    // providers: [SearchService],
     controllers: [SearchController]
 })
 export default class SearchModule {
     static register() {
+        /*
         if (process.env.ELASTICSEARCH_HOST) {
             return {
                 module: SearchModule,
@@ -23,6 +24,7 @@ export default class SearchModule {
                 })]
             }
         }
+         */
 
         return {
             module: SearchModule

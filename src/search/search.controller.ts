@@ -15,7 +15,7 @@ import Anime from '../entity/anime.entity';
 export default class SearchController {
     searchPaginator: PaginateFunction = undefined;
 
-    constructor(private readonly databaseService: DatabaseService, private readonly elasticsearchService: ElasticsearchService) {
+    constructor(private readonly databaseService: DatabaseService/*, private readonly elasticsearchService: ElasticsearchService*/) {
         this.searchPaginator = createPaginator({ })
     }
 
@@ -50,8 +50,8 @@ export default class SearchController {
         if (!perPage || perPage <= 0) perPage = 20;
         perPage = Math.min(100, perPage);
 
-        /*
-        if (!process.env.ELASTICSEARCH_HOST) {
+
+        // if (!process.env.ELASTICSEARCH_HOST) {
             // @ts-ignore
             const results = await this.searchPaginator<Prisma.Anime, Prisma.AnimeFindManyArgs>(this.databaseService.anime, {
                 orderBy: {
@@ -85,6 +85,16 @@ export default class SearchController {
                                     }
                                 }
                             })
+                        },
+                        {
+                            AND: query.split(" ").map(q => {
+                                return {
+                                    description: {
+                                        contains: q,
+                                        mode: "insensitive"
+                                    }
+                                }
+                            })
                         }
                     ]
                 }
@@ -101,22 +111,30 @@ export default class SearchController {
             })
 
             return results;
-        } else {
+        //} else {
 
-        }
+        //}
 
-         */
 
+
+        /*
         const searchResult = await this.elasticsearchService.search({
             from: (page - 1) * perPage,
             size: perPage,
             query: {
-                query_string: {
+                multi_match: {
                     query: decodeURIComponent(query),
+                    fields: [
+                        "title",
+                        "description",
+
+                    ]
                 }
             }
         });
 
         return searchResult.hits.hits.map(hit => hit._source);
+
+         */
     }
 }

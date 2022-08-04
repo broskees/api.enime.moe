@@ -11,31 +11,23 @@ export default class NineAnimeScraper extends Scraper {
     override infoOnly = true;
 
     private readonly table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    private readonly key = "rTKp3auwu0ULA6II";
+    private readonly key = "kMXzgyNzT3k5dYab";
 
     fetch(path: string, number: number, endNumber: number | undefined): Episode | Promise<Episode> | Promise<Episode[]> | Episode[] {
         return undefined;
     }
 
     async match(t): Promise<AnimeWebPage> {
-        console.log(`${this.url().replace('.to', '.id')}/filter?keyword=${encode(t.current).replace(
-            /%20/g,
-            '+'
-        )}&vrf=${this.ev(t.current)}`)
         const response = await (await fetch(`${this.url().replace('.to', '.id')}/filter?keyword=${encode(t.current).replace(
             /%20/g,
             '+'
-        )}&vrf=${this.ev(t.current)}`)).text();
+        )}&vrf=${encode(this.ev(t.current))}`)).text();
 
 
-        console.log(response)
         const $ = load(response);
         const results = [];
 
-        console.log("OK?")
-
         $('#list-items > div.item').each((i, el) => {
-            console.log("OK?")
             results.push({
                 // id: $(el).find('div > div.ani > a').attr('href')?.split('/')[2]!,
                 title: $(el).find('div > div.info > div.b1 > a').text()!,
@@ -44,11 +36,7 @@ export default class NineAnimeScraper extends Scraper {
                 // type: $(el).find('div > div.ani > a > div.meta > div > div.right').text()!,
             });
         });
-        console.log(results);
-
         if (!results.length) return undefined;
-
-        console.log(results);
 
         // Attempt 1 - Match the first 9anime search element
         const firstResult = results[0];
@@ -56,6 +44,16 @@ export default class NineAnimeScraper extends Scraper {
             if (!alt) continue;
 
             if (deepMatch(alt, firstResult.title, false)) return firstResult;
+        }
+
+        for (let alt of [t.english, t.romaji, t.native, ...(t.synonyms || [])]) {
+            if (!alt) continue;
+
+            for (let result of results) {
+                if (deepMatch(alt, result.title, false)) {
+                    return result;
+                }
+            }
         }
 
         return undefined;
