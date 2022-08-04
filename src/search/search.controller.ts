@@ -55,7 +55,11 @@ export default class SearchController {
             // @ts-ignore
             const results = await this.searchPaginator<Prisma.Anime, Prisma.AnimeFindManyArgs>(this.databaseService.anime, {
                 orderBy: {
-                    updatedAt: "desc"
+                    _relevance: {
+                        search: query.split(" ").join(" | "),
+                        fields: ["title_english", "title_romaji"],
+                        sort: "desc"
+                    }
                 },
                 include: {
                     genre: {
@@ -67,34 +71,16 @@ export default class SearchController {
                 where: {
                     OR: [
                         {
-                            AND: query.split(" ").map(q => {
-                                return {
-                                    title_english: {
-                                        contains: q,
-                                        mode: "insensitive"
-                                    }
-                                }
-                            })
+                            title_english: {
+                                search: query.split(" ").join(" | "),
+                                mode: "insensitive"
+                            }
                         },
                         {
-                            AND: query.split(" ").map(q => {
-                                return {
-                                    title_romaji: {
-                                        contains: q,
-                                        mode: "insensitive"
-                                    }
-                                }
-                            })
-                        },
-                        {
-                            AND: query.split(" ").map(q => {
-                                return {
-                                    description: {
-                                        contains: q,
-                                        mode: "insensitive"
-                                    }
-                                }
-                            })
+                            title_romaji: {
+                                search: query.split(" ").join(" | "),
+                                mode: "insensitive"
+                            }
                         }
                     ]
                 }
