@@ -30,13 +30,14 @@ import SourceService from './source/source.service';
 import RapidCloudModule from './rapid-cloud/rapid-cloud.module';
 import EpisodeService from './episode/episode.service';
 import AdminModule from './admin/admin.module';
-import SearchModule from './search/search.module';
 import ViewController from './controller/view.controller';
+import SearchModule from './search/search.module';
+import MappingModule from './mapping/mapping.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true
-  }), ScheduleModule.forRoot(), DatabaseModule, SearchModule.register(), ScraperModule, InformationModule, AdminModule, HealthModule,
+  }), ScheduleModule.forRoot(), DatabaseModule, MappingModule, SearchModule, ScraperModule, InformationModule, AdminModule, HealthModule,
       CacheModule.register({
           store: redisStore,
           host: process.env.REDIS_HOST,
