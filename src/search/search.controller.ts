@@ -61,36 +61,41 @@ export default class SearchController {
                 ${"%" + query + "%"} % ANY(synonyms)
                 OR  anime.title_english ILIKE ${"%" + query + "%"}
                 OR  anime.title_romaji  ILIKE ${"%" + query + "%"}
-                OR  anime.description   ILIKE ${"%" + query + "%"}
         `;
 
         // @ts-ignore
         const total = count.count;
 
-        const results: unknown[] = await this.databaseService.$queryRaw`
+        const results: Anime[] = await this.databaseService.$queryRaw`
             SELECT * FROM anime 
             WHERE 
                 ${"%" + query + "%"} % ANY(synonyms)
                 OR  anime.title_english ILIKE ${"%" + query + "%"}
                 OR  anime.title_romaji  ILIKE ${"%" + query + "%"}
-                OR  anime.description   ILIKE ${"%" + query + "%"}
             ORDER BY
                 anime.title_english ILIKE ${"%" + query + "%"} OR NULL,
-                anime.title_romaji  ILIKE ${"%" + query + "%"} OR NULL,
-                anime.description   ILIKE ${"%" + query + "%"} OR NULL
+                anime.title_romaji  ILIKE ${"%" + query + "%"} OR NULL
             LIMIT    ${perPage}
             OFFSET   ${skip}
         `;
 
         const lastPage = Math.ceil(total / perPage)
 
-        return {
-            data: results.map(result => {
-                delete result["title_english"];
-                delete result["title_romaji"];
+        for (let result of results) {
+            delete result["title_english"];
+            delete result["title_romaji"];
 
-                return result;
-            }),
+            const genreIds: string[] = ((await this.databaseService.$queryRaw`
+            SELECT * FROM "_AnimeToGenre" WHERE "A" = ${result.id}
+            `) as object[]).map(relation => relation["B"]);
+
+            const genres = await this.databaseService.$transaction(genreIds.map(id => this.databaseService.genre.findUnique({ where: { id } })));
+
+            result.genre = genres.map(genre => genre.name);
+        }
+
+        return {
+            data: results,
             meta: {
                 total: total,
                 lastPage,
