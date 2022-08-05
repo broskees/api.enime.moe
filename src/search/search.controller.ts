@@ -1,4 +1,4 @@
-import { CacheTTL, Controller, Get, Param, Query } from '@nestjs/common';
+import { BadRequestException, CacheTTL, Controller, Get, Param, Query } from '@nestjs/common';
 import DatabaseService from '../database/database.service';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { createPaginator } from 'prisma-pagination';
@@ -46,81 +46,54 @@ export default class SearchController {
         description: "How many elements per page should this response have? Minimum: 1, maximum: 100"
     })
     async search(@Param("query") query: string, @Query("page") page: number, @Query("perPage") perPage: number) {
+        if (query.length <= 2) throw new BadRequestException("The search query has to be greater than or equal to 2.");
+
         if (!page || page <= 0) page = 1;
         if (!perPage || perPage <= 0) perPage = 20;
         perPage = Math.min(100, perPage);
 
+        // See https://www.prisma.io/docs/concepts/components/prisma-client/raw-database-access#sql-injection, Prisma mitigates potential SQL injections already
+        const skip = page > 0 ? perPage * (page - 1) : 0
 
-        // if (!process.env.ELASTICSEARCH_HOST) {
-            // @ts-ignore
-            const results = await this.searchPaginator<Prisma.Anime, Prisma.AnimeFindManyArgs>(this.databaseService.anime, {
-                orderBy: {
-                    _relevance: {
-                        search: query.split(" ").join(" | "),
-                        fields: ["title_english", "title_romaji"],
-                        sort: "desc"
-                    }
-                },
-                include: {
-                    genre: {
-                        select: {
-                            name: true
-                        }
-                    }
-                },
-                where: {
-                    OR: [
-                        {
-                            title_english: {
-                                search: query.split(" ").join(" | "),
-                                mode: "insensitive"
-                            }
-                        },
-                        {
-                            title_romaji: {
-                                search: query.split(" ").join(" | "),
-                                mode: "insensitive"
-                            }
-                        }
-                    ]
-                }
-            }, { page: page, perPage: perPage })
+        const count = await this.databaseService.$queryRaw`
+            SELECT COUNT(*) FROM anime
+            WHERE
+                ${"%" + query + "%"} % ANY(synonyms)
+                OR  anime.title_english ILIKE ${"%" + query + "%"}
+                OR  anime.title_romaji  ILIKE ${"%" + query + "%"}
+                OR  anime.description   ILIKE ${"%" + query + "%"}
+        `;
 
-            results.data = results.data.map(anime => {
-                clearAnimeField(anime);
+        // @ts-ignore
+        const total = count.count;
 
-                return {
-                    ...anime,
-                    // @ts-ignore
-                    genre: anime.genre.map(g => g.name)
-                }
-            })
+        const results: unknown[] = await this.databaseService.$queryRaw`
+            SELECT * FROM anime 
+            WHERE 
+                ${"%" + query + "%"} % ANY(synonyms)
+                OR  anime.title_english ILIKE ${"%" + query + "%"}
+                OR  anime.title_romaji  ILIKE ${"%" + query + "%"}
+                OR  anime.description   ILIKE ${"%" + query + "%"}
+            ORDER BY
+                anime.title_english ILIKE ${"%" + query + "%"} OR NULL,
+                anime.title_romaji  ILIKE ${"%" + query + "%"} OR NULL,
+                anime.description   ILIKE ${"%" + query + "%"} OR NULL
+            LIMIT    ${perPage}
+            OFFSET   ${skip}
+        `;
 
-            return results;
-        //} else {
+        const lastPage = Math.ceil(total / perPage)
 
-        //}
-
-
-
-        /*
-        const searchResult = await this.elasticsearchService.search({
-            from: (page - 1) * perPage,
-            size: perPage,
-            query: {
-                multi_match: {
-                    query: decodeURIComponent(query),
-                    fields: [
-                        "title",
-                        "description",
-
-                    ]
-                }
-            }
-        });
-
-        return searchResult.hits.hits.map(hit => hit._source);
-
-         */
+        return {
+            data: results,
+            meta: {
+                total: total,
+                lastPage,
+                currentPage: page,
+                perPage,
+                prev: page > 1 ? page - 1 : null,
+                next: page < lastPage ? page + 1 : null,
+            },
+        }
     }
 }
