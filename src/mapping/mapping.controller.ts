@@ -1,22 +1,34 @@
 import { CacheTTL, Controller, Get, NotFoundException, Param } from '@nestjs/common';
-import { ApiExcludeController, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import Anime from '../entity/anime.entity';
 import { clearAnimeField } from '../helper/model';
 import { SkipThrottle } from '@nestjs/throttler';
 import DatabaseService from '../database/database.service';
 
 @SkipThrottle()
-@ApiExcludeController()
 @Controller("/mapping")
+@ApiTags("mapping")
 export default class MappingController {
     constructor(private readonly databaseService: DatabaseService) {
     }
 
     @Get(":provider/:id")
-    @ApiOperation({ operationId: "Get anime", summary: "Get an anime object in the service with ID or slug" })
+    @ApiOperation({ operationId: "Get anime", summary: "Get an anime object in the service with ID from an external provider" })
+    @ApiParam({
+        name: "provider",
+        type: String,
+        required: true,
+        description: `The name of external provider. You can put any provider allowed in ["mal", "anidb", "kitsu", "anilist", "thetvdb", "anisearch", "livechart", "notify.moe", "anime-planet"]. Reminder: For TheTVDb there might be multiple anime entries with same TheTVDb ID (such as Komi Can't Communicate Season 1/2), in this case Enime will only return the first anime entry that matches the TVDb ID provided`
+    })
+    @ApiParam({
+        name: "id",
+        type: String,
+        required: true,
+        description: "The ID of that external provided specified above"
+    })
     @ApiResponse({
         status: 200,
-        description: "The found anime object with the ID or slug provided",
+        description: "The found anime object with the ID provided",
         type: Anime
     })
     @ApiResponse({
