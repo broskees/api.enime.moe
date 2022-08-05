@@ -14,22 +14,6 @@ export default class AnimeController {
     constructor(private readonly databaseService: DatabaseService, private readonly episodeService: EpisodeService) {
     }
 
-    @Get(":animeId/:episodeNumber")
-    @ApiOperation({ operationId: "Get episode with anime ID and episode number", summary: "Get an episode object with provided anime ID and episode number" })
-    @ApiResponse({
-        status: 200,
-        description: "The found episode object with the ID provided",
-        type: Episode
-    })
-    @ApiResponse({
-        status: 404,
-        description: "The episode cannot be found within the database for given ID"
-    })
-    @CacheTTL(300)
-    async getEpisode(@Param("animeId") animeId: string, @Param("episodeNumber") episodeNumber: number) {
-        return this.episodeService.getEpisodeByAnimeId(animeId, episodeNumber);
-    }
-
     @Get(":id")
     @ApiOperation({ operationId: "Get anime", summary: "Get an anime object in the service with ID or slug" })
     @ApiResponse({

@@ -31,6 +31,7 @@ import RapidCloudModule from './rapid-cloud/rapid-cloud.module';
 import EpisodeService from './episode/episode.service';
 import AdminModule from './admin/admin.module';
 import SearchModule from './search/search.module';
+import ViewController from './controller/view.controller';
 
 @Module({
   imports: [ConfigModule.forRoot({
@@ -61,7 +62,7 @@ import SearchModule from './search/search.module';
           }),
       })
   ],
-  controllers: [AppController, AnimeController, SourceController, ToolController, StatsController, ProxyController, RecentController, EpisodeController, PopularController],
+  controllers: [AppController, ViewController, AnimeController, SourceController, ToolController, StatsController, ProxyController, RecentController, EpisodeController, PopularController],
   providers: [AppService, DatabaseService, ProxyService, RapidCloudService, ScraperService, EpisodeService, SourceService,
       {
           provide: APP_GUARD,

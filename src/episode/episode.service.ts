@@ -7,16 +7,25 @@ export default class EpisodeService {
     constructor(private readonly databaseService: DatabaseService) {
     }
 
-    async getEpisodeByAnimeId(animeId: string, episodeNumber: number) {
+    async getEpisodeByAnimeIdentifier(animeId: string, episodeNumber: number) {
         const episode = await this.databaseService.episode.findFirst({
             where: {
-                animeId: animeId,
-                number: Number(episodeNumber)
+                number: Number(episodeNumber),
+                anime: {
+                    OR: [
+                        {
+                            slug: animeId
+                        },
+                        {
+                            id: animeId
+                        }
+                    ]
+                }
             },
             ...this.selectQuery()
         });
 
-        if (!episode) throw new NotFoundException(`The episode with anime ID ${animeId} and episode number ${episodeNumber} does not exist`);
+        if (!episode) throw new NotFoundException(`The episode with anime ID/slug ${animeId} and episode number ${episodeNumber} does not exist`);
 
         return this.processEpisode(episode);
     }
@@ -43,6 +52,7 @@ export default class EpisodeService {
                 anime: {
                     select: {
                         id: true,
+                        slug: true,
                         title: true,
                         episodes: true,
                         genre: {
