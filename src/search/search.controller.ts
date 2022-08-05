@@ -85,7 +85,12 @@ export default class SearchController {
         const lastPage = Math.ceil(total / perPage)
 
         return {
-            data: results,
+            data: results.map(result => {
+                delete result["title_english"];
+                delete result["title_romaji"];
+
+                return result;
+            }),
             meta: {
                 total: total,
                 lastPage,
