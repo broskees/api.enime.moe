@@ -32,6 +32,9 @@ REDIS_PASSWORD={Redis password}
 ### Docker-Compose
 1. Refer to ``docker-compose.yml`` in the project root to proceed
 
+## Support
+- We use Discord for quick suggestions & bug reports, please join [here](https://discord.gg/nxr8be8WGa)
+
 ## Credit
 - https://github.com/consumet/consumet.ts - Some of the scraper logic from various anime sites
 - https://github.com/consumet/consumet-api - Used as a backup scraper
