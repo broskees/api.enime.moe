@@ -239,7 +239,7 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
 
                     return {
                         "description": updates.map(update => {
-                            return `${update.anime} Episode ${update.episodeNumber} ${update.episodeTitle ? `- ${update.episodeTitle}` : ""} (Watch it [here](https://enime.moe/${update.animeSlug}/episode/${update.episodeNumber}) on Enime.moe)`
+                            return `${update.anime} Episode ${update.episodeNumber} ${update.episodeTitle ? `- ${update.episodeTitle}` : ""} (Watch it [here](https://enime.moe/watch/${update.animeSlug}/${update.episodeNumber}) on Enime.moe)`
                         }).join("\n"),
                         "url": `https://api.enime.moe`,
                         "color": 15198183,
