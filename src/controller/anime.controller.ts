@@ -54,6 +54,12 @@ export default class AnimeController {
                             }
                         }
                     },
+                },
+                relations: {
+                    select: {
+                        anime: true,
+                        type: true
+                    }
                 }
             }
         });

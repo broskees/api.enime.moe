@@ -64,11 +64,10 @@ export default class InformationService implements OnModuleInit {
                         removeOnComplete: true
                     });
 
+                    await this.executeWorker("fetch-relation", animeIds);
+
                     if (created.length) {
-                        await this.informationWorker.send({
-                            event: "resync",
-                            data: created
-                        });
+                        await this.executeWorker("resync", created);
                     }
                 } else if (event === "fetch-specific") {
                     const updatedAnimeId = data;
@@ -126,14 +125,45 @@ export default class InformationService implements OnModuleInit {
                         connect: { id: relation.id }
                     }
                 },
-                update: {
-                    type: relation.type,
+                update: {}
+            })
+        }));
+
+        await this.databaseService.$transaction(relationsObj.filter(r => r.type === "PREQUEL" || r.type === "SEQUEL").map(r => {
+            return this.databaseService.relation.upsert({
+                where: {
+                    animeId_type: {
+                        animeId: anime.id,
+                        type: r.type === "PREQUEL" ? "SEQUEL" : "PREQUEL"
+                    }
+                },
+                create: {
+                    type: r.type === "PREQUEL" ? "SEQUEL" : "PREQUEL",
                     anime: {
-                        connect: { id: relation.id }
+                        connect: { id: anime.id }
+                    }
+                },
+                update: {}
+            })
+        }))
+
+        await this.databaseService.$transaction(relationsObj.filter(r => r.type === "PREQUEL" || r.type === "SEQUEL").map(r => {
+            return this.databaseService.anime.update({
+                where: {
+                    id: r.animeId
+                },
+                data: {
+                    relations: {
+                        connect: {
+                            animeId_type: {
+                                animeId: anime.id,
+                                type: r.type === "PREQUEL" ? "SEQUEL" : "PREQUEL"
+                            }
+                        }
                     }
                 }
             })
-        }));
+        }))
 
         await this.databaseService.anime.update({
             where: {

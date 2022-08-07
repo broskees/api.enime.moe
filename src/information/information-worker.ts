@@ -30,6 +30,18 @@ async function bootstrap() {
                 event: "fetch-specific",
                 data: updatedAnimeId
             });
+        } else if (event === "fetch-relation") {
+            Logger.debug("[InformationWorker] Start fetching relations for anime");
+            const ids = Array.isArray(data) ? data : [data];
+
+            for (let id of ids) {
+                await service.fetchRelations(id);
+            }
+
+            process.send({
+                event: "fetch-relation",
+                data: ids
+            });
         }
     });
 }

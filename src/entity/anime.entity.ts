@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import Relation from './relation.entity';
 
 export default class Anime {
     @ApiProperty({
@@ -146,4 +147,11 @@ export default class Anime {
         ]
     })
     genre: string[];
+
+    @ApiProperty({
+        description: "Anime relations. Only exposed in `/anime/{id|slug}` endpoint",
+        type: Relation,
+        isArray: true
+    })
+    relations: Relation[];
 }

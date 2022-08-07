@@ -97,6 +97,20 @@ export default class InformationModule implements OnModuleInit {
         });
     }
 
+    @Cron(CronExpression.EVERY_WEEK)
+    async updateRelationsCompleted() {
+        const ids = await this.databaseService.anime.findMany({
+            where: {
+                status: "FINISHED"
+            },
+            select: {
+                id: true
+            }
+        });
+
+        await this.informationService.executeWorker("fetch-relation", ids);
+    }
+
     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
     async pushToScrapeQueue() {
         const eligibleToScrape = await this.databaseService.anime.findMany({
