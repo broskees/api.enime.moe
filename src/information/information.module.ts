@@ -13,11 +13,12 @@ import { Queue } from 'bull';
 import ProxyService from '../proxy/proxy.service';
 import DatabaseModule from '../database/database.module';
 import ScraperModule from '../scraper/scraper.module';
+import MappingModule from '../mapping/mapping.module';
 
 @Module({
     imports: [BullModule.registerQueue({
         name: "scrape"
-    }), DatabaseModule],
+    }), DatabaseModule, MappingModule],
     providers: [InformationService, ProxyService, ScraperService],
     exports: [InformationService]
 })

@@ -3,13 +3,16 @@ import DatabaseModule from '../database/database.module';
 import { BullModule } from '@nestjs/bull';
 import DatabaseService from '../database/database.service';
 import MappingController from './mapping.controller';
+import MappingService from './mapping.service';
+import CacheModule from '../cache/cache.module';
 
 @Module({
-    imports: [DatabaseModule, BullModule.registerQueue({
+    imports: [CacheModule, DatabaseModule, BullModule.registerQueue({
         name: "mapping"
     })],
-    providers: [],
-    controllers: [MappingController]
+    providers: [MappingService],
+    controllers: [MappingController],
+    exports: [MappingService]
 })
 export default class MappingModule {
     constructor(private readonly databaseService: DatabaseService) {

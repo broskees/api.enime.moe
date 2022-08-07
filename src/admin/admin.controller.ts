@@ -3,7 +3,7 @@ import { Body, Controller, Get, Put, UseGuards } from '@nestjs/common';
 import { ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { AdminGuard } from './admin.guard';
 import InformationService from '../information/information.service';
-import { NoCache } from '../cache/no-cache.decorator';
+import { NoCache } from '../decorator/no-cache.decorator';
 import DatabaseService from '../database/database.service';
 import ScraperService from '../scraper/scraper.service';
 import { InjectQueue } from '@nestjs/bull';

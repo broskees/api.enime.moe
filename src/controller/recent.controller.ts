@@ -3,7 +3,6 @@ import DatabaseService from '../database/database.service';
 import { SkipThrottle } from '@nestjs/throttler';
 import { createPaginator, PaginateFunction } from 'prisma-pagination';
 import Prisma from '@prisma/client';
-import { clearAnimeField } from '../helper/model';
 import { ApiExcludeEndpoint, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import Recent from '../entity/recent.entity';
 
@@ -97,7 +96,7 @@ export default class RecentController {
                 // @ts-ignore
                 anime: {
                     // @ts-ignore
-                    ...clearAnimeField(episode.anime),
+                    ...episode.anime,
                     // @ts-ignore
                     genre: episode.anime.genre.map(g => g.name)
                 },

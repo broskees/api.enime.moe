@@ -1,7 +1,6 @@
 import { CacheTTL, Controller, Get, NotFoundException, Param, UseInterceptors } from '@nestjs/common';
 import DatabaseService from '../database/database.service';
 import { SkipThrottle } from '@nestjs/throttler';
-import { clearAnimeField } from '../helper/model';
 import {  ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import Anime from '../entity/anime.entity';
 import Episode from '../entity/episode.entity';
@@ -60,8 +59,6 @@ export default class AnimeController {
         });
 
         if (!anime) throw new NotFoundException(`The anime with ID ${id} does not exist`);
-
-        clearAnimeField(anime);
 
         return {
             ...anime,

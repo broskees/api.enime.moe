@@ -11,16 +11,16 @@ import fetch from 'node-fetch';
 import cuid from 'cuid';
 import { fork } from 'child_process';
 import path from 'path';
+import MappingService from '../mapping/mapping.service';
 
 @Injectable()
 export default class InformationService implements OnModuleInit {
     private readonly client: GraphQLClient;
     private readonly anilistBaseEndpoint = "https://graphql.anilist.co";
     private readonly seasons = ["WINTER", "SPRING", "SUMMER", "FALL"];
-    private readonly animeListMappingEndpoint = "https://raw.githubusercontent.com/Fribb/anime-lists/master/anime-list-full.json";
     private informationWorker;
 
-    constructor(private readonly databaseService: DatabaseService, @InjectQueue("scrape") private readonly queue: Queue) {
+    constructor(private readonly databaseService: DatabaseService, private readonly mappingService: MappingService, @InjectQueue("scrape") private readonly queue: Queue) {
         this.client = new GraphQLClient(this.anilistBaseEndpoint, {
             headers: {
                 "Content-Type": "application/json",
@@ -89,7 +89,7 @@ export default class InformationService implements OnModuleInit {
     }
 
     async resyncAnime(ids: string[] | undefined = undefined) {
-        const mappings = await (await fetch(this.animeListMappingEndpoint)).json();
+        const mappings = await this.mappingService.getMappings();
 
         let animeList;
 
@@ -115,7 +115,8 @@ export default class InformationService implements OnModuleInit {
         const transactions = [];
 
         for (let anime of animeList) {
-            let mapping = mappings.find(mapping => mapping?.anilist_id === anime.anilistId);
+            // @ts-ignore
+            let mapping = mappings?.find(mapping => mapping?.anilist_id === anime.anilistId);
             if (!mapping) continue;
 
             const mappingObject: object = {};

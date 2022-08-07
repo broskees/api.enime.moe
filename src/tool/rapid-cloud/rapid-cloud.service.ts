@@ -2,7 +2,7 @@ import { CACHE_MANAGER, Inject, Injectable, OnModuleInit } from '@nestjs/common'
 import WebSocket from 'ws';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Cache } from 'cache-manager';
-import Source from '../entity/source.entity';
+import Source from '../../entity/source.entity';
 
 @Injectable()
 export default class RapidCloudService implements OnModuleInit {

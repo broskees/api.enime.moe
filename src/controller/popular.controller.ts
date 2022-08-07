@@ -4,7 +4,6 @@ import { PaginateFunction } from 'prisma-pagination/src';
 import DatabaseService from '../database/database.service';
 import { createPaginator } from 'prisma-pagination';
 import Prisma from '@prisma/client';
-import { clearAnimeField } from '../helper/model';
 import Popular from '../entity/popular.entity';
 
 @Controller("/popular")
@@ -59,8 +58,6 @@ export default class PopularController {
         }, { page: page, perPage: perPage })
 
         results.data = results.data.map(anime => {
-            clearAnimeField(anime);
-
             return {
                 ...anime,
                 // @ts-ignore

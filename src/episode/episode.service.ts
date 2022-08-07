@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import DatabaseService from '../database/database.service';
-import { clearAnimeField } from '../helper/model';
 
 @Injectable()
 export default class EpisodeService {
@@ -94,7 +93,7 @@ export default class EpisodeService {
             ...episode,
             anime: {
                 // @ts-ignore
-                ...clearAnimeField(episode.anime),
+                ...episode.anime,
                 genre: episode.anime.genre.map(g => g.name)
             },
             // @ts-ignore

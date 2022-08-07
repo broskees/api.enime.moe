@@ -9,8 +9,8 @@ import {
 import { Cache } from 'cache-manager';
 import DatabaseService from '../database/database.service';
 import ScraperService from '../scraper/scraper.service';
-import RapidCloudService from '../rapid-cloud/rapid-cloud.service';
 import Source from '../entity/source.entity';
+import RapidCloudService from '../tool/rapid-cloud/rapid-cloud.service';
 
 @Injectable()
 export default class SourceService {

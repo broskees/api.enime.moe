@@ -1,13 +1,9 @@
 import { BadRequestException, CacheTTL, Controller, Get, Param, Query } from '@nestjs/common';
 import DatabaseService from '../database/database.service';
-import { SkipThrottle, Throttle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import { createPaginator } from 'prisma-pagination';
 import { PaginateFunction } from 'prisma-pagination/src';
-import Prisma from '@prisma/client';
-import { clearAnimeField } from '../helper/model';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import Search from '../entity/search.entity';
-import { ElasticsearchService } from '@nestjs/elasticsearch';
 import Anime from '../entity/anime.entity';
 
 @Controller("/search")
@@ -15,7 +11,7 @@ import Anime from '../entity/anime.entity';
 export default class SearchController {
     searchPaginator: PaginateFunction = undefined;
 
-    constructor(private readonly databaseService: DatabaseService/*, private readonly elasticsearchService: ElasticsearchService*/) {
+    constructor(private readonly databaseService: DatabaseService) {
         this.searchPaginator = createPaginator({ })
     }
 
@@ -59,8 +55,8 @@ export default class SearchController {
             SELECT COUNT(*) FROM anime
             WHERE
                 ${"%" + query + "%"} % ANY(synonyms)
-                OR  anime.title_english ILIKE ${"%" + query + "%"}
-                OR  anime.title_romaji  ILIKE ${"%" + query + "%"}
+                OR  anime.title->>'english' ILIKE ${"%" + query + "%"}
+                OR  anime.title->>'romaji'  ILIKE ${"%" + query + "%"}
         `;
 
         // @ts-ignore
@@ -70,11 +66,11 @@ export default class SearchController {
             SELECT * FROM anime 
             WHERE 
                 ${"%" + query + "%"} % ANY(synonyms)
-                OR  anime.title_english ILIKE ${"%" + query + "%"}
-                OR  anime.title_romaji  ILIKE ${"%" + query + "%"}
+                OR  anime.title->>'english' ILIKE ${"%" + query + "%"}
+                OR  anime.title->>'romaji'  ILIKE ${"%" + query + "%"}
             ORDER BY
-                anime.title_english ILIKE ${"%" + query + "%"} OR NULL,
-                anime.title_romaji  ILIKE ${"%" + query + "%"} OR NULL
+                anime.title->>'english' ILIKE ${"%" + query + "%"} OR NULL,
+                anime.title->>'romaji'  ILIKE ${"%" + query + "%"} OR NULL
             LIMIT    ${perPage}
             OFFSET   ${skip}
         `;
@@ -82,9 +78,6 @@ export default class SearchController {
         const lastPage = Math.ceil(total / perPage)
 
         for (let result of results) {
-            delete result["title_english"];
-            delete result["title_romaji"];
-
             const genreIds: string[] = ((await this.databaseService.$queryRaw`
             SELECT * FROM "_AnimeToGenre" WHERE "A" = ${result.id}
             `) as object[]).map(relation => relation["B"]);

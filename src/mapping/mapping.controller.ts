@@ -1,7 +1,6 @@
 import { CacheTTL, Controller, Get, NotFoundException, Param } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import Anime from '../entity/anime.entity';
-import { clearAnimeField } from '../helper/model';
 import { SkipThrottle } from '@nestjs/throttler';
 import DatabaseService from '../database/database.service';
 
@@ -66,8 +65,6 @@ export default class MappingController {
         });
 
         if (!anime) throw new NotFoundException(`The anime mapped with provider ${provider} under ID ${id} does not exist`);
-
-        clearAnimeField(anime);
 
         return {
             ...anime,
