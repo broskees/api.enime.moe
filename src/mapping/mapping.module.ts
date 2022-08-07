@@ -1,14 +1,17 @@
-import { Module } from '@nestjs/common';
+import { CacheModule, Module } from '@nestjs/common';
 import DatabaseModule from '../database/database.module';
-import { BullModule } from '@nestjs/bull';
 import DatabaseService from '../database/database.service';
 import MappingController from './mapping.controller';
 import MappingService from './mapping.service';
-import CacheModule from '../cache/cache.module';
+import * as redisStore from 'cache-manager-redis-store';
 
 @Module({
-    imports: [CacheModule, DatabaseModule, BullModule.registerQueue({
-        name: "mapping"
+    imports: [DatabaseModule, CacheModule.register({
+        store: redisStore,
+        host: process.env.REDIS_HOST,
+        port: Number(process.env.REDIS_PORT),
+        password: process.env.REDIS_PASSWORD,
+        isGlobal: true
     })],
     providers: [MappingService],
     controllers: [MappingController],

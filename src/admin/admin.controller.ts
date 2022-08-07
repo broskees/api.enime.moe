@@ -1,5 +1,5 @@
 import { SkipThrottle } from '@nestjs/throttler';
-import { Body, Controller, Get, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Put, UseGuards } from '@nestjs/common';
 import { ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { AdminGuard } from './admin.guard';
 import InformationService from '../information/information.service';
@@ -22,6 +22,14 @@ export default class AdminController {
         await this.informationService.executeWorker("fetch-specific", animeId);
 
         return "Done";
+    }
+
+    @Get("/fetch-relation/:id")
+    @NoCache()
+    async fetchRelation(@Param("id") id: string) {
+        const callback = await this.informationService.fetchRelations(id);
+
+        return callback;
     }
 
     @Get("/check-mapping")

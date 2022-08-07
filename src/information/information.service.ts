@@ -7,7 +7,6 @@ import DatabaseService from '../database/database.service';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import slugify from 'slugify';
-import fetch from 'node-fetch';
 import cuid from 'cuid';
 import { fork } from 'child_process';
 import path from 'path';
@@ -88,6 +87,75 @@ export default class InformationService implements OnModuleInit {
         }
     }
 
+    async fetchRelations(id: string) {
+        const anime = await this.databaseService.anime.findUnique({ where: { id }});
+
+        const requestVariables = {
+            id: anime.anilistId
+        };
+
+        let animeList = await this.client.request(SPECIFIC_ANIME, requestVariables);
+
+        const anilistAnime = animeList?.Page?.media[0];
+        const edges = anilistAnime.relations.edges;
+
+        const relations = [];
+
+        for (let edge of edges) {
+            if (!["PARENT", "PREQUEL", "SEQUEL"].includes(edge.relationType)) continue;
+
+            const relatedAnimeId = await this.fetchAnimeByAnilistID(edge.node.id, true);
+
+            relations.push({
+                type: edge.relationType,
+                id: relatedAnimeId
+            });
+        }
+
+        const relationsObj = await this.databaseService.$transaction(relations.map(relation => {
+            return this.databaseService.relation.upsert({
+                where: {
+                    animeId_type: {
+                        animeId: relation.id,
+                        type: relation.type
+                    }
+                },
+                create: {
+                    type: relation.type,
+                    anime: {
+                        connect: { id: relation.id }
+                    }
+                },
+                update: {
+                    type: relation.type,
+                    anime: {
+                        connect: { id: relation.id }
+                    }
+                }
+            })
+        }));
+
+        await this.databaseService.anime.update({
+            where: {
+                id: anime.id
+            },
+            data: {
+                relations: {
+                    connect: relationsObj.map(r => {
+                        return {
+                            animeId_type: {
+                                animeId: r.animeId,
+                                type: r.type
+                            }
+                        }
+                    })
+                }
+            }
+        });
+
+        return true;
+    }
+
     async resyncAnime(ids: string[] | undefined = undefined) {
         const mappings = await this.mappingService.getMappings();
 
@@ -116,7 +184,7 @@ export default class InformationService implements OnModuleInit {
 
         for (let anime of animeList) {
             // @ts-ignore
-            let mapping = mappings?.find(mapping => mapping?.anilist_id === anime.anilistId);
+            let mapping = mappings?.find(mapping => mapping?.anilist_id == anime.anilistId);
             if (!mapping) continue;
 
             const mappingObject: object = {};
@@ -182,7 +250,7 @@ export default class InformationService implements OnModuleInit {
         };
     }
 
-    async fetchAnimeByAnilistID(anilistId) {
+    async fetchAnimeByAnilistID(anilistId, full = false) {
         let animeDbUpdateId = undefined;
 
         const requestVariables = {
@@ -228,7 +296,7 @@ export default class InformationService implements OnModuleInit {
             })
         }
 
-        return animeDbUpdateId;
+        return full ? animeDbUpdateId || animeDb.id : animeDbUpdateId;
     }
 
     async refetchAnime(): Promise<object> {

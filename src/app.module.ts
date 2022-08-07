@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { CacheModule, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -30,12 +30,18 @@ import ViewController from './controller/view.controller';
 import SearchModule from './search/search.module';
 import MappingModule from './mapping/mapping.module';
 import ToolModule from './tool/tool.module';
-import CacheModule from './cache/cache.module';
+import * as redisStore from 'cache-manager-redis-store';
 
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true
-  }), CacheModule, ScheduleModule.forRoot(), DatabaseModule, ToolModule, SearchModule, ScraperModule, InformationModule, AdminModule, HealthModule,
+  }), CacheModule.register({
+      store: redisStore,
+      host: process.env.REDIS_HOST,
+      port: Number(process.env.REDIS_PORT),
+      password: process.env.REDIS_PASSWORD,
+      isGlobal: true
+  }), ScheduleModule.forRoot(), DatabaseModule, ToolModule, SearchModule, ScraperModule, InformationModule, AdminModule, HealthModule,
       MappingModule,
       BullModule.forRoot({
         redis: {

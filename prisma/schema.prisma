@@ -106,6 +106,7 @@ model Relation {
     type        RelationType
 
     @@map("relation")
+    @@unique([animeId, type])
 }
 
 model Website {

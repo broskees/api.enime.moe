@@ -1,5 +1,4 @@
 import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import fetch from 'node-fetch';
 import { Cache } from 'cache-manager';
 
@@ -12,17 +11,14 @@ export default class MappingService {
 
     async getMappings() {
         let cachedMapping = await this.cacheManager.get("anime-list-mapping");
-        if (!cachedMapping) cachedMapping = await (await fetch(this.animeListMappingEndpoint)).json();
+        if (!cachedMapping) {
+            cachedMapping = await (await fetch(this.animeListMappingEndpoint)).json();
+            await this.cacheManager.set("anime-list-mapping", JSON.stringify(cachedMapping), 1000 * 60 * 60 * 12);
+        }
         else if (typeof cachedMapping === "string") {
             cachedMapping = JSON.parse(cachedMapping);
         }
 
         return cachedMapping;
-    }
-
-    @Cron(CronExpression.EVERY_12_HOURS)
-    private async reloadMapping() {
-        const mapping = await (await fetch(this.animeListMappingEndpoint)).json();
-        await this.cacheManager.set("anime-list-mapping", JSON.stringify(mapping), 1000 * 60 * 60 * 12);
     }
 }

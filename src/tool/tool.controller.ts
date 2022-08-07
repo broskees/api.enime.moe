@@ -2,6 +2,7 @@ import { Controller, Get, Param } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import MappingService from '../mapping/mapping.service';
 import RapidCloudService from './rapid-cloud/rapid-cloud.service';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller("/tool")
 @ApiExcludeController()
@@ -10,7 +11,8 @@ export default class ToolController {
     }
 
     @Get("/mapping/:provider/:id")
-    async externalProviderMapping(@Param("provider") provider: string, @Param("id") id: string) {
+    @Throttle(60, 2)
+    async externalProviderMapping(@Param("provider") provider: string, @Param("id") id: number | string) {
         if (provider === "type") return {};
 
         const mappings = await this.mappingService.getMappings();
@@ -19,7 +21,9 @@ export default class ToolController {
         if (provider === "myanimelist") provider = "mal";
 
         // @ts-ignore
-        let mapping = mappings.find(mapping => mapping[provider.endsWith("_id") ? provider : `${provider}_id`] === id);
+        let mapping = mappings.find(mapping => {
+            return mapping[provider.endsWith("_id") ? provider : `${provider}_id`] == id
+        });
         if (!mapping) return {};
         delete mapping["type"];
 
