@@ -178,9 +178,7 @@ export default class InformationService implements OnModuleInit {
                 })
             },
             currentEpisode: currentEpisode,
-            synonyms: anilistAnime.synonyms,
-            title_english: anilistAnime.title.english,
-            title_romaji: anilistAnime.title.romaji
+            synonyms: anilistAnime.synonyms
         };
     }
 
