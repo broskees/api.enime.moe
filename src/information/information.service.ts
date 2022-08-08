@@ -202,7 +202,7 @@ export default class InformationService implements OnModuleInit {
         await this.databaseService.$transaction(transactions);
     }
 
-    convertToDbAnime(anilistAnime) {
+    async convertToDbAnime(anilistAnime) {
         let nextEpisode = anilistAnime.nextAiringEpisode, currentEpisode = 0;
         if (nextEpisode) {
             currentEpisode = nextEpisode.episode - 1;
@@ -213,7 +213,7 @@ export default class InformationService implements OnModuleInit {
             }
         }
 
-        const mappings = this.mappingService.getMappings() as unknown as any[];
+        const mappings = await this.mappingService.getMappings() as unknown as any[];
         let mapping = mappings?.find(mapping => mapping?.anilist_id == anilistAnime.id);
 
         const mappingObject: object = {};
@@ -242,7 +242,7 @@ export default class InformationService implements OnModuleInit {
             seasonInt: anilistAnime.seasonInt,
             year: anilistAnime.seasonYear,
             next: nextEpisode,
-            mapping: mappingObject,
+            mappings: mappingObject,
             genre: {
                 connectOrCreate: anilistAnime.genres.map(genre => {
                     return {
@@ -269,7 +269,7 @@ export default class InformationService implements OnModuleInit {
 
         if (!anilistAnime) throw new NotFoundException("Such anime cannot be found from Anilist");
 
-        const animeDbObject = this.convertToDbAnime(anilistAnime);
+        const animeDbObject = await this.convertToDbAnime(anilistAnime);
 
         let animeDb = await this.databaseService.anime.findUnique({
             where: {
@@ -356,7 +356,7 @@ export default class InformationService implements OnModuleInit {
         const transactions = [];
 
         for (let anime of trackingAnime) {
-            const animeDbObject = this.convertToDbAnime(anime);
+            const animeDbObject = await this.convertToDbAnime(anime);
             let animeDb = await this.databaseService.anime.findUnique({
                 where: {
                     anilistId: anime.id
