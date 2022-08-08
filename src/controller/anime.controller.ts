@@ -55,12 +55,8 @@ export default class AnimeController {
                         }
                     },
                 },
-                relations: {
-                    select: {
-                        anime: true,
-                        type: true
-                    }
-                }
+                prequel: true,
+                sequel: true
             }
         });
 

@@ -149,9 +149,12 @@ export default class Anime {
     genre: string[];
 
     @ApiProperty({
-        description: "Anime relations. Only exposed in `/anime/{id|slug}` endpoint",
-        type: Relation,
-        isArray: true
+        description: "Anime prequel"
     })
-    relations: Relation[];
+    prequel: Anime | undefined;
+
+    @ApiProperty({
+        description: "Anime sequel"
+    })
+    sequel: Anime | undefined;
 }
