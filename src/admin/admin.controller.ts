@@ -32,6 +32,18 @@ export default class AdminController {
         return callback;
     }
 
+    @Get("/fetch-relation")
+    @NoCache()
+    async fetchRelationAll(@Param("id") id: string) {
+        await this.informationService.executeWorker("fetch-relation", (await this.databaseService.anime.findMany({
+            select: {
+                id: true
+            }
+        })).map(a => a.id));
+
+        return "Done";
+    }
+
     @Get("/check-mapping")
     @NoCache()
     async checkPotentialWrongMapping() {

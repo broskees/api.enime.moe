@@ -238,7 +238,7 @@ export default class InformationService implements OnModuleInit {
             popularity: anilistAnime.popularity,
             averageScore: anilistAnime.averageScore,
             status: anilistAnime.status,
-            season: anilistAnime.season,
+            season: anilistAnime.season || "UNKNOWN",
             seasonInt: anilistAnime.seasonInt,
             year: anilistAnime.seasonYear,
             next: nextEpisode,
