@@ -42,7 +42,7 @@ export default class SearchController {
         description: "How many elements per page should this response have? Minimum: 1, maximum: 100"
     })
     async search(@Param("query") query: string, @Query("page") page: number, @Query("perPage") perPage: number) {
-        if (query.length <= 2) throw new BadRequestException("The search query has to be greater than or equal to 2.");
+        if (query.length <= 1) throw new BadRequestException("The search query has to be greater than or equal to 2.");
 
         if (!page || page <= 0) page = 1;
         if (!perPage || perPage <= 0) perPage = 20;
