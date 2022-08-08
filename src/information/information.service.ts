@@ -213,8 +213,8 @@ export default class InformationService implements OnModuleInit {
             }
         }
 
-        // @ts-ignore
-        let mapping = mappings?.find(mapping => mapping?.anilist_id == anime.anilistId);
+        const mappings = this.mappingService.getMappings() as unknown as any[];
+        let mapping = mappings?.find(mapping => mapping?.anilist_id == anilistAnime.id);
 
         const mappingObject: object = {};
 
