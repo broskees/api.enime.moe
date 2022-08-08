@@ -213,6 +213,19 @@ export default class InformationService implements OnModuleInit {
             }
         }
 
+        // @ts-ignore
+        let mapping = mappings?.find(mapping => mapping?.anilist_id == anime.anilistId);
+
+        const mappingObject: object = {};
+
+        if (mapping) {
+            for (let k in mapping) {
+                if (k === "type") continue;
+
+                mappingObject[k.replace("_id", "")] = mapping[k];
+            }
+        }
+
         return {
             title: anilistAnime.title,
             anilistId: anilistAnime.id,
@@ -229,6 +242,7 @@ export default class InformationService implements OnModuleInit {
             seasonInt: anilistAnime.seasonInt,
             year: anilistAnime.seasonYear,
             next: nextEpisode,
+            mapping: mappingObject,
             genre: {
                 connectOrCreate: anilistAnime.genres.map(genre => {
                     return {

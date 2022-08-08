@@ -134,12 +134,6 @@ export default class InformationModule implements OnModuleInit {
     }
 
     async onModuleInit() {
-        const ids = await this.databaseService.anime.findMany({
-            select: {
-                id: true
-            }
-        });
-
-        await this.informationService.executeWorker("fetch-relation", ids.map(ids => ids.id));
+        // await this.informationService.resyncAnime()
     }
 }
