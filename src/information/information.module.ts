@@ -27,7 +27,7 @@ export default class InformationModule implements OnModuleInit {
         if (!process.env.TESTING) dayjs.extend(utc);
     }
 
-    // @Cron(CronExpression.EVERY_MINUTE)
+    @Cron(CronExpression.EVERY_MINUTE)
     async updateAnime() {
         Logger.debug("Now we start refetching currently releasing anime from Anilist");
         performance.mark("information-fetch-start");
@@ -37,13 +37,13 @@ export default class InformationModule implements OnModuleInit {
         await this.informationService.executeWorker("refetch");
     }
 
-    // @Cron(CronExpression.EVERY_12_HOURS)
+    @Cron(CronExpression.EVERY_12_HOURS)
     async resyncAnime() {
         await this.informationService.executeWorker("resync");
     }
 
     // Every 10 minutes, we check anime that have don't have "enough episode" stored in the database (mostly the anime source sites update slower than Anilist because subs stuff) so we sync that part more frequently
-    // @Cron(CronExpression.EVERY_10_MINUTES)
+    @Cron(CronExpression.EVERY_10_MINUTES)
     async checkForUpdatedEpisodes() {
         const animeList = await this.databaseService.anime.findMany({
             where: {
@@ -73,7 +73,7 @@ export default class InformationModule implements OnModuleInit {
         });
     }
 
-    // @Cron(CronExpression.EVERY_HOUR)
+    @Cron(CronExpression.EVERY_HOUR)
     async refreshAnimeInfo() {
         const animeList = await this.databaseService.anime.findMany({
             where: {
@@ -97,7 +97,7 @@ export default class InformationModule implements OnModuleInit {
         });
     }
 
-    // @Cron(CronExpression.EVERY_WEEK)
+    @Cron(CronExpression.EVERY_WEEK)
     async updateRelationsCompleted() {
         const ids = await this.databaseService.anime.findMany({
             where: {
@@ -111,7 +111,7 @@ export default class InformationModule implements OnModuleInit {
         await this.informationService.executeWorker("fetch-relation", ids);
     }
 
-    // @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+    @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
     async pushToScrapeQueue() {
         const eligibleToScrape = await this.databaseService.anime.findMany({
             where: {
