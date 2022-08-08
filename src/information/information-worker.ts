@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import InformationModule from './information.module';
 import InformationService from './information.service';
 import { Logger } from '@nestjs/common';
+import { sleep } from '../helper/tool';
 
 let service = null;
 async function bootstrap() {
@@ -36,6 +37,7 @@ async function bootstrap() {
 
             for (let id of ids) {
                 await service.fetchRelations(id);
+                await sleep(1000);
             }
 
             process.send({

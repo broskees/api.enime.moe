@@ -3,7 +3,7 @@
 
 generator client {
     provider = "prisma-client-js"
-    previewFeatures = ["fullTextSearch", "fullTextIndex"]
+    previewFeatures = ["fullTextSearch", "fullTextIndex", "interactiveTransactions"]
 }
 
 datasource db {
@@ -31,12 +31,11 @@ model Anime {
     anilistId           Int             @unique
     coverImage          String?
     bannerImage         String?
-    status              AiringStatus
-    season              AiringSeason
+    status              AiringStatus?
+    season              AiringSeason    @default(UNKNOWN)
     title               Json
     mappings            Json            @default("{}")
     currentEpisode      Int?
-    relations           Relation[]
     episodes            Episode[]
     next                DateTime?
     genre               Genre[]
@@ -49,6 +48,9 @@ model Anime {
     popularity          Int?
     color               String?
     year                Int?
+    prequelId           String?         @unique
+    prequel             Anime?          @relation("AnimeRelation", fields: [prequelId], references: [id])
+    sequel              Anime?          @relation("AnimeRelation")
 
     createdAt   DateTime   @default(now())
     updatedAt   DateTime   @updatedAt
@@ -99,16 +101,6 @@ model Source {
     @@map("source")
 }
 
-model Relation {
-    id          String     @id  @default(cuid())
-    anime       Anime      @relation(fields: [animeId], references: [id], onDelete: Cascade)
-    animeId     String
-    type        RelationType
-
-    @@map("relation")
-    @@unique([animeId, type])
-}
-
 model Website {
     id          String     @id  @default(cuid())
     name        String
@@ -136,6 +128,7 @@ enum AiringStatus {
 }
 
 enum AiringSeason {
+    UNKNOWN
     SPRING
     SUMMER
     FALL

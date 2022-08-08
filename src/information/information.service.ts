@@ -101,87 +101,49 @@ export default class InformationService implements OnModuleInit {
         const relations = [];
 
         for (let edge of edges) {
-            if (!["PARENT", "PREQUEL", "SEQUEL"].includes(edge.relationType)) continue;
+            if (!["PREQUEL", "SEQUEL"].includes(edge.relationType)) continue;
 
-            const relatedAnimeId = await this.fetchAnimeByAnilistID(edge.node.id, true);
+            try {
+                const relatedAnimeId = await this.fetchAnimeByAnilistID(edge.node.id, true);
 
-            relations.push({
-                type: edge.relationType,
-                id: relatedAnimeId
-            });
+                relations.push({
+                    type: edge.relationType,
+                    id: relatedAnimeId
+                });
+            } catch (e) {
+                Logger.error(e);
+            }
         }
 
-        const relationsObj = await this.databaseService.$transaction(relations.map(relation => {
-            return this.databaseService.relation.upsert({
-                where: {
-                    animeId_type: {
-                        animeId: relation.id,
-                        type: relation.type
-                    }
-                },
-                create: {
-                    type: relation.type,
-                    anime: {
-                        connect: { id: relation.id }
-                    }
-                },
-                update: {}
-            })
-        }));
+        for (let r of relations) {
+            let forwardRelationId = r.id, backwardRelationId = anime.id;
 
-        await this.databaseService.$transaction(relationsObj.filter(r => r.type === "PREQUEL" || r.type === "SEQUEL").map(r => {
-            return this.databaseService.relation.upsert({
+            await this.databaseService.anime.update({
                 where: {
-                    animeId_type: {
-                        animeId: anime.id,
-                        type: r.type === "PREQUEL" ? "SEQUEL" : "PREQUEL"
-                    }
-                },
-                create: {
-                    type: r.type === "PREQUEL" ? "SEQUEL" : "PREQUEL",
-                    anime: {
-                        connect: { id: anime.id }
-                    }
-                },
-                update: {}
-            })
-        }))
-
-        await this.databaseService.$transaction(relationsObj.filter(r => r.type === "PREQUEL" || r.type === "SEQUEL").map(r => {
-            return this.databaseService.anime.update({
-                where: {
-                    id: r.animeId
+                    id: backwardRelationId
                 },
                 data: {
-                    relations: {
+                    sequel: {
                         connect: {
-                            animeId_type: {
-                                animeId: anime.id,
-                                type: r.type === "PREQUEL" ? "SEQUEL" : "PREQUEL"
-                            }
+                            id: forwardRelationId
                         }
                     }
                 }
-            })
-        }))
+            });
 
-        await this.databaseService.anime.update({
-            where: {
-                id: anime.id
-            },
-            data: {
-                relations: {
-                    connect: relationsObj.map(r => {
-                        return {
-                            animeId_type: {
-                                animeId: r.animeId,
-                                type: r.type
-                            }
+            await this.databaseService.anime.update({
+                where: {
+                    id: forwardRelationId
+                },
+                data: {
+                    prequel: {
+                        connect: {
+                            id: backwardRelationId
                         }
-                    })
+                    }
                 }
-            }
-        });
+            });
+        }
 
         return true;
     }
