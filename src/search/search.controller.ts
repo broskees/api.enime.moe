@@ -5,6 +5,7 @@ import { createPaginator } from 'prisma-pagination';
 import { PaginateFunction } from 'prisma-pagination/src';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import Anime from '../entity/anime.entity';
+import { Prisma } from '@prisma/client';
 
 @Controller("/search")
 @ApiTags("search")
@@ -41,7 +42,13 @@ export default class SearchController {
         required: false,
         description: "How many elements per page should this response have? Minimum: 1, maximum: 100"
     })
-    async search(@Param("query") query: string, @Query("page") page: number, @Query("perPage") perPage: number) {
+    @ApiQuery({
+        type: Boolean,
+        name: "all",
+        required: false,
+        description: "Whether the search query should include all anime (including ones that aren't released yet)"
+    })
+    async search(@Param("query") query: string, @Query("page") page: number, @Query("perPage") perPage: number, @Query("all") all: boolean) {
         if (query.length <= 1) throw new BadRequestException("The search query has to be greater than or equal to 2.");
 
         if (!page || page <= 0) page = 1;
@@ -51,23 +58,27 @@ export default class SearchController {
         // See https://www.prisma.io/docs/concepts/components/prisma-client/raw-database-access#sql-injection, Prisma mitigates potential SQL injections already
         const skip = page > 0 ? perPage * (page - 1) : 0
 
-        const count = await this.databaseService.$queryRaw`
-            SELECT COUNT(*) FROM anime
+        const where = Prisma.sql`
             WHERE
+            ${all ? Prisma.empty : Prisma.sql`(anime.status != 'NOT_YET_RELEASED') AND`}
+            (
                 ${"%" + query + "%"} % ANY(synonyms)
                 OR  anime.title->>'english' ILIKE ${"%" + query + "%"}
                 OR  anime.title->>'romaji'  ILIKE ${"%" + query + "%"}
+            )
+        `
+
+        const count = await this.databaseService.$queryRaw`
+            SELECT COUNT(*) FROM anime
+            ${where}
         `;
 
         // @ts-ignore
         const total = count.count;
 
         const results: Anime[] = await this.databaseService.$queryRaw`
-            SELECT * FROM anime 
-            WHERE 
-                ${"%" + query + "%"} % ANY(synonyms)
-                OR  anime.title->>'english' ILIKE ${"%" + query + "%"}
-                OR  anime.title->>'romaji'  ILIKE ${"%" + query + "%"}
+            SELECT * FROM anime
+            ${where}
             ORDER BY
                 anime.title->>'english' ILIKE ${"%" + query + "%"} OR NULL,
                 anime.title->>'romaji'  ILIKE ${"%" + query + "%"} OR NULL

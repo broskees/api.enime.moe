@@ -4,6 +4,14 @@ import { PrismaClient } from '@prisma/client';
 @Injectable()
 export default class DatabaseService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
 
+    constructor() {
+        super({
+            ...(!process.env.PRODUCTION && {
+                log: ["query", "error"]
+            })
+        });
+    }
+
     async onModuleInit() {
         await this.$connect();
     }
