@@ -171,30 +171,27 @@ export default class InformationService implements OnModuleInit {
                 })
             }
 
-            parsedRelations.push(forwardRelation);
-        }
-
-        try { // Ignore Prisma's complain about "unique constraint violation", there is no way this can be non-unique I'm not sure why Prisma is complaining so
-            await this.databaseService.anime.update({
-                where: {
-                    id: anime.id
-                },
-                data: {
-                    relations: {
-                        connect: parsedRelations.map(r => {
-                            return {
-                                id: r.id,
+            try { // Ignore Prisma's complain about "unique constraint violation", there is no way this can be non-unique I'm not sure why Prisma is complaining so
+                await this.databaseService.anime.update({
+                    where: {
+                        id: anime.id
+                    },
+                    data: {
+                        linkedRelations: {
+                            connect: {
+                                id: forwardRelation.id,
                                 type_animeId: {
-                                    animeId: r.animeId,
-                                    type: r.type
+                                    animeId: forwardRelation.animeId,
+                                    type: forwardRelation.type
                                 }
                             }
-                        })
+                        }
                     }
-                }
-            });
-        } catch (e) {
+                })
+            } catch (e) {
 
+            }
+            parsedRelations.push(forwardRelation);
         }
 
         return relations;

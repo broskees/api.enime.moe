@@ -19,6 +19,7 @@ export class HealthController {
         return this.health.check([
             () => this.http.pingCheck("api-server", "https://api.enime.moe"),
             () => this.prisma.isHealthy("database"),
+            () => this.http.pingCheck("tool-rapid-cloud", "https://api.enime.moe/tool/rapid-cloud/server-id"),
             () => this.memory.checkHeap("memory", 150 * 1024 * 1024)
         ]);
     }
