@@ -3,6 +3,7 @@ import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import Anime from '../entity/anime.entity';
 import { SkipThrottle } from '@nestjs/throttler';
 import DatabaseService from '../database/database.service';
+import { isNumeric } from '../helper/tool';
 
 @SkipThrottle()
 @Controller("/mapping")
@@ -35,7 +36,9 @@ export default class MappingController {
         description: "The anime cannot be found within the database for given ID"
     })
     @CacheTTL(300)
-    async get(@Param("provider") provider: string, @Param("id") id: string): Promise<Anime> {
+    async get(@Param("provider") provider: string, @Param("id") id: string | number): Promise<Anime> {
+        if (isNumeric(id)) id = Number(id);
+
         const anime = await this.databaseService.anime.findFirst({
             where: {
                 mappings: {

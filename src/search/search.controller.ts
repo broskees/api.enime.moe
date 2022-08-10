@@ -55,8 +55,10 @@ export default class SearchController {
         if (!perPage || perPage <= 0) perPage = 20;
         perPage = Math.min(100, perPage);
 
+        query = query.replaceAll("-", "%").replaceAll(" ", "%");
+
         // See https://www.prisma.io/docs/concepts/components/prisma-client/raw-database-access#sql-injection, Prisma mitigates potential SQL injections already
-        const skip = page > 0 ? perPage * (page - 1) : 0
+        const skip = page > 0 ? perPage * (page - 1) : 0;
 
         const where = Prisma.sql`
             WHERE
