@@ -116,8 +116,8 @@ model Relation {
   id      String       @id @default(cuid())
   type    RelationType
   animeId String
-  anime   Anime        @relation(name: "relations", fields: [animeId], references: [id], onDelete: Cascade)
-  linked  Anime[]      @relation("linkedRelations")
+  anime   Anime        @relation(name: "linkedRelations", fields: [animeId], references: [id], onDelete: Cascade)
+  linked  Anime[]      @relation("relations")
 
   @@unique([type, animeId])
 }
