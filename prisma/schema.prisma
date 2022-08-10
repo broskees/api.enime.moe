@@ -2,140 +2,150 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-    provider = "prisma-client-js"
-    previewFeatures = ["fullTextSearch", "fullTextIndex", "interactiveTransactions"]
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex", "interactiveTransactions"]
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Proxy {
-    id          String    @id   @default(cuid())
-    username    String
-    password    String
-    address     String    @unique
-    port_http   Int
-    port_socks5 Int
-    country     String
-    city        String?
-    used        Int
+  id          String  @id @default(cuid())
+  username    String
+  password    String
+  address     String  @unique
+  port_http   Int
+  port_socks5 Int
+  country     String
+  city        String?
+  used        Int
 
-    @@map("proxies")
+  @@map("proxies")
 }
 
 model Anime {
-    id                  String          @id  @default(cuid())
-    slug                String?         @unique
-    anilistId           Int             @unique
-    coverImage          String?
-    bannerImage         String?
-    status              AiringStatus?
-    season              AiringSeason    @default(UNKNOWN)
-    title               Json
-    mappings            Json            @default("{}")
-    currentEpisode      Int?
-    episodes            Episode[]
-    next                DateTime?
-    genre               Genre[]
-    synonyms            String[]
-    lastEpisodeUpdate   DateTime?
-    seasonInt           Int?
-    description         String?
-    duration            Int?
-    averageScore        Int?
-    popularity          Int?
-    color               String?
-    year                Int?
-    prequelId           String?         @unique
-    prequel             Anime?          @relation("AnimeRelation", fields: [prequelId], references: [id])
-    sequel              Anime?          @relation("AnimeRelation")
+  id                String        @id @default(cuid())
+  slug              String?       @unique
+  anilistId         Int           @unique
+  coverImage        String?
+  bannerImage       String?
+  status            AiringStatus?
+  season            AiringSeason  @default(UNKNOWN)
+  title             Json
+  mappings          Json          @default("{}")
+  currentEpisode    Int?
+  episodes          Episode[]
+  next              DateTime?
+  genre             Genre[]
+  synonyms          String[]
+  lastEpisodeUpdate DateTime?
+  seasonInt         Int?
+  description       String?
+  duration          Int?
+  averageScore      Int?
+  popularity        Int?
+  color             String?
+  year              Int?
+  relations         Relation[]    @relation("relations")
+  linkedRelations   Relation[]    @relation("linkedRelations")
 
-    createdAt   DateTime   @default(now())
-    updatedAt   DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    @@map("anime")
+  @@map("anime")
 }
 
 model Genre {
-    id          String     @id  @default(cuid())
-    name        String     @unique
-    anime       Anime[]
+  id    String  @id @default(cuid())
+  name  String  @unique
+  anime Anime[]
 
-    @@map("genre")
+  @@map("genre")
 }
 
 model Episode {
-    id              String     @id  @default(cuid())
-    animeId         String
-    anime           Anime      @relation(fields: [animeId], references: [id], onDelete: Cascade)
-    number          Int
-    title           String?
-    image           String?
-    sources         Source[]
-    introStart      Int?
-    introEnd        Int?
-    filler          Boolean?
-    createdAt       DateTime   @default(now())
-    updatedAt       DateTime   @updatedAt
+  id         String   @id @default(cuid())
+  animeId    String
+  anime      Anime    @relation(fields: [animeId], references: [id], onDelete: Cascade)
+  number     Int
+  title      String?
+  image      String?
+  sources    Source[]
+  introStart Int?
+  introEnd   Int?
+  filler     Boolean?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-    @@map("episode")
+  @@map("episode")
 }
 
 model Source {
-    id          String     @id  @default(cuid())
-    url         String     @unique
-    websiteId   String
-    website     Website    @relation(fields: [websiteId], references: [id], onDelete: Cascade)
-    episodeId   String
-    episode     Episode    @relation(fields: [episodeId], references: [id], onDelete: Cascade)
-    type        SourceType @default(DIRECT)
-    referer     String?
-    resolution  String?
-    format      String?
-    browser     Boolean    @default(true)
-    createdAt   DateTime   @default(now())
-    updatedAt   DateTime   @updatedAt
+  id         String     @id @default(cuid())
+  url        String     @unique
+  websiteId  String
+  website    Website    @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  episodeId  String
+  episode    Episode    @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  type       SourceType @default(DIRECT)
+  referer    String?
+  resolution String?
+  format     String?
+  browser    Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
-    @@map("source")
+  @@map("source")
 }
 
 model Website {
-    id          String     @id  @default(cuid())
-    name        String
-    priority    Int?       @default(-1)
-    url         String     @unique
-    subtitle    Boolean    @default(false)
-    locale      String
-    sources     Source[]
+  id       String   @id @default(cuid())
+  name     String
+  priority Int?     @default(-1)
+  url      String   @unique
+  subtitle Boolean  @default(false)
+  locale   String
+  sources  Source[]
 
-    @@map("website")
+  @@map("website")
+}
+
+model Relation {
+  id      String       @id @default(cuid())
+  type    RelationType
+  animeId String
+  anime   Anime        @relation(name: "relations", fields: [animeId], references: [id], onDelete: Cascade)
+  linked  Anime[]      @relation("linkedRelations")
+
+  @@unique([type, animeId])
 }
 
 enum RelationType {
-    PREQUEL
-    SEQUEL
-    PARENT
+  PREQUEL
+  SEQUEL
+  PARENT
+  SIDE_STORY
 }
 
 enum AiringStatus {
-    FINISHED
-    RELEASING
-    NOT_YET_RELEASED
-    CANCELLED
-    HIATUS
+  FINISHED
+  RELEASING
+  NOT_YET_RELEASED
+  CANCELLED
+  HIATUS
 }
 
 enum AiringSeason {
-    UNKNOWN
-    SPRING
-    SUMMER
-    FALL
-    WINTER
+  UNKNOWN
+  SPRING
+  SUMMER
+  FALL
+  WINTER
 }
 
 enum SourceType {
-    DIRECT
-    PROXY
+  DIRECT
+  PROXY
 }

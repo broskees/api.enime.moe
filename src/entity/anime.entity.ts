@@ -149,12 +149,7 @@ export default class Anime {
     genre: string[];
 
     @ApiProperty({
-        description: "Anime prequel"
+        description: "Anime relations"
     })
-    prequel: Anime | undefined;
-
-    @ApiProperty({
-        description: "Anime sequel"
-    })
-    sequel: Anime | undefined;
+    relations: Relation[];
 }

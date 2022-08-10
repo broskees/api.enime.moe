@@ -97,18 +97,43 @@ export default class InformationModule implements OnModuleInit {
         });
     }
 
-    @Cron(CronExpression.EVERY_WEEK)
-    async updateRelationsCompleted() {
+    @Cron(CronExpression.EVERY_12_HOURS)
+    async updateRelations() {
         const ids = await this.databaseService.anime.findMany({
             where: {
-                status: "FINISHED"
+                OR: [
+                    {
+                        relations: {
+                            none: {}
+                        }
+                    },
+                    {
+                        NOT: {
+                            relations: {
+                                some: {
+                                    type: "PREQUEL"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        NOT: {
+                            relations: {
+                                some: {
+                                    type: "SEQUEL"
+                                }
+                            }
+                        }
+                    }
+                ]
+
             },
             select: {
                 id: true
             }
         });
 
-        await this.informationService.executeWorker("fetch-relation", ids);
+        await this.informationService.executeWorker("fetch-relation", ids.map(id => id.id));
     }
 
     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)

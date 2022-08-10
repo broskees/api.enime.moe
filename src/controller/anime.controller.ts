@@ -55,12 +55,15 @@ export default class AnimeController {
                         }
                     },
                 },
-                prequel: true,
-                sequel: true
+                relations: {
+                    include: {
+                        anime: true
+                    }
+                }
             }
         });
 
-        if (!anime) throw new NotFoundException(`The anime with ID ${id} does not exist`);
+        if (!anime) throw new NotFoundException(`The anime with ID or slug ${id} does not exist`);
 
         return {
             ...anime,

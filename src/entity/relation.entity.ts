@@ -13,5 +13,5 @@ export default class Relation {
         description: "Type of the relation",
         example: "SEQUEL"
     })
-    type: "PREQUEL" | "SEQUEL" | "PARENT";
+    type: "PREQUEL" | "SEQUEL" | "PARENT" | "SIDE_STORY";
 }

@@ -75,6 +75,7 @@ query ($id: Int, $page: Int) {
           relationType(version: 2)
           node {
             id
+            type
             title {
               romaji
               native

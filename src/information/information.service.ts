@@ -11,6 +11,7 @@ import cuid from 'cuid';
 import { fork } from 'child_process';
 import path from 'path';
 import MappingService from '../mapping/mapping.service';
+import Prisma from '@prisma/client';
 
 @Injectable()
 export default class InformationService implements OnModuleInit {
@@ -86,24 +87,40 @@ export default class InformationService implements OnModuleInit {
         }
     }
 
-    async fetchRelations(id: string) {
-        const anime = await this.databaseService.anime.findUnique({ where: { id }});
+    async fetchRelations(id: string | number, preloaded = undefined) {
+        const conditions = [];
+        if (typeof id === "number") conditions.push({
+            anilistId: id as number
+        });
+        else conditions.push({
+            id: id as string
+        });
+
+        const anime = await this.databaseService.anime.findFirst({
+            where: {
+                OR: conditions
+            }
+        });
 
         const requestVariables = {
             id: anime.anilistId
         };
 
-        let animeList = await this.client.request(SPECIFIC_ANIME, requestVariables);
+        let animeList;
+        if (!preloaded) {
+           animeList = await this.client.request(SPECIFIC_ANIME, requestVariables);
+        }
 
-        const anilistAnime = animeList?.Page?.media[0];
+        const anilistAnime = preloaded || animeList?.Page?.media[0];
+
         const edges = anilistAnime.relations.edges;
 
         const relations = [];
 
         for (let edge of edges) {
-            if (!["PREQUEL", "SEQUEL"].includes(edge.relationType)) continue;
-
             try {
+                if (edge.node.type !== "ANIME" || !Prisma.RelationType[edge.relationType]) continue;
+                if (edge.node.id === anime.anilistId) continue; // ???? An anime is related to itself
                 const relatedAnimeId = await this.fetchAnimeByAnilistID(edge.node.id, true);
 
                 relations.push({
@@ -115,37 +132,72 @@ export default class InformationService implements OnModuleInit {
             }
         }
 
+        const parsedRelations = [];
+
         for (let r of relations) {
-            let forwardRelationId = r.id, backwardRelationId = anime.id;
-
-            await this.databaseService.anime.update({
+            let forwardRelation = await this.databaseService.relation.findUnique({
                 where: {
-                    id: backwardRelationId
-                },
-                data: {
-                    sequel: {
-                        connect: {
-                            id: forwardRelationId
-                        }
+                    type_animeId: {
+                        animeId: r.id,
+                        type: r.type
                     }
                 }
             });
 
-            await this.databaseService.anime.update({
-                where: {
-                    id: forwardRelationId
-                },
-                data: {
-                    prequel: {
-                        connect: {
-                            id: backwardRelationId
+            if (!forwardRelation) {
+                forwardRelation = await this.databaseService.relation.create({
+                    data: {
+                        animeId: r.id,
+                        type: r.type,
+                        linked: {
+                            connect: {
+                                id: anime.id
+                            }
                         }
                     }
-                }
-            });
+                })
+            } else {
+                forwardRelation = await this.databaseService.relation.update({
+                    where: {
+                        id: forwardRelation.id
+                    },
+                    data: {
+                        linked: {
+                            connect: {
+                                id: anime.id
+                            }
+                        }
+                    }
+                })
+            }
+
+            parsedRelations.push(forwardRelation);
         }
 
-        return true;
+        try { // Ignore Prisma's complain about "unique constraint violation", there is no way this can be non-unique I'm not sure why Prisma is complaining so
+            await this.databaseService.anime.update({
+                where: {
+                    id: anime.id
+                },
+                data: {
+                    relations: {
+                        connect: parsedRelations.map(r => {
+                            return {
+                                id: r.id,
+                                type_animeId: {
+                                    animeId: r.animeId,
+                                    type: r.type
+                                }
+                            }
+                        })
+                    }
+                }
+            });
+        } catch (e) {
+
+        }
+
+        return relations;
     }
 
     async resyncAnime(ids: string[] | undefined = undefined) {
@@ -226,6 +278,8 @@ export default class InformationService implements OnModuleInit {
             }
         }
 
+        slugify.extend({"×": "x"})
+
         return {
             title: anilistAnime.title,
             anilistId: anilistAnime.id,
@@ -263,21 +317,22 @@ export default class InformationService implements OnModuleInit {
             id: anilistId
         };
 
-        let animeList = await this.client.request(SPECIFIC_ANIME, requestVariables);
-
-        const anilistAnime = animeList?.Page?.media[0];
-
-        if (!anilistAnime) throw new NotFoundException("Such anime cannot be found from Anilist");
-
-        const animeDbObject = await this.convertToDbAnime(anilistAnime);
 
         let animeDb = await this.databaseService.anime.findUnique({
             where: {
-                anilistId: anilistAnime.id
+                anilistId: anilistId
             }
         });
 
-        if (!animeDb) { // Anime does not exist in our database, immediately push it to scrape
+        if (!animeDb) {
+            let animeList = await this.client.request(SPECIFIC_ANIME, requestVariables);
+
+            const anilistAnime = animeList?.Page?.media[0];
+
+            if (!anilistAnime) throw new NotFoundException("Such anime cannot be found from Anilist");
+
+            const animeDbObject = await this.convertToDbAnime(anilistAnime);
+
             let id = cuid();
             await this.databaseService.anime.create({
                 data: {
@@ -287,19 +342,8 @@ export default class InformationService implements OnModuleInit {
             });
 
             animeDbUpdateId = id;
-        } else {
-            if (animeDb.currentEpisode !== animeDbObject.currentEpisode) { // Anime exists in the database but current episode count from Anilist is not the one we stored in database. This means the anime might have updated, push it to scrape queue
-                animeDbUpdateId = animeDb.id;
-            }
 
-            await this.databaseService.anime.update({
-                where: {
-                    anilistId: anilistAnime.id
-                },
-                data: {
-                    ...animeDbObject
-                }
-            })
+            await this.fetchRelations(id, anilistAnime);
         }
 
         return full ? animeDbUpdateId || animeDb.id : animeDbUpdateId;
@@ -353,8 +397,6 @@ export default class InformationService implements OnModuleInit {
         let createdAnimeIds = [];
         let updatedAnimeIds = [];
 
-        const transactions = [];
-
         for (let anime of trackingAnime) {
             const animeDbObject = await this.convertToDbAnime(anime);
             let animeDb = await this.databaseService.anime.findUnique({
@@ -365,30 +407,31 @@ export default class InformationService implements OnModuleInit {
 
             if (!animeDb) { // Anime does not exist in our database, immediately push it to scrape
                 let id = cuid();
-                transactions.push(this.databaseService.anime.create({
+                await this.databaseService.anime.create({
                     data: {
                         id: id,
                         ...animeDbObject
                     }
-                }));
+                });
                 createdAnimeIds.push(id);
             } else {
                 if (animeDb.currentEpisode !== animeDbObject.currentEpisode) { // Anime exists in the database but current episode count from Anilist is not the one we stored in database. This means the anime might have updated, push it to scrape queue
                     updatedAnimeIds.push(animeDb.id);
                 }
 
-                transactions.push(this.databaseService.anime.update({
+                await this.databaseService.anime.update({
                     where: {
                         anilistId: anime.id
                     },
                     data: {
                         ...animeDbObject
                     }
-                }))
+                });
             }
+
+            await this.fetchRelations(anime.id, anime);
         }
 
-        await this.databaseService.$transaction(transactions);
         return {
             created: createdAnimeIds,
             updated: updatedAnimeIds
