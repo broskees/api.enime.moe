@@ -41,7 +41,7 @@ export default class RapidCloudService implements OnModuleInit {
         }
 
 
-        this.websocket = new WebSocket("wss://ws1.rapid-cloud.ru/socket.io/?EIO=4&transport=websocket");
+        this.websocket = new WebSocket("wss://ws1.rapid-cloud.co/socket.io/?EIO=4&transport=websocket");
 
         try {
             this.websocket.on("open", () => {
