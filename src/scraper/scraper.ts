@@ -22,8 +22,8 @@ export default abstract class Scraper {
             shouldResetTimeout: true,
             retryCondition: (_error) => true,
             retryDelay: () => 6000,
-            onRetry: (_, __, requestConfig) => {
-                const { httpAgent, httpsAgent } = this.proxyService.getProxyAgent();
+            onRetry: async (_, __, requestConfig) => {
+                const { httpAgent, httpsAgent } = await this.proxyService.getProxyAgent();
 
                 requestConfig.httpsAgent = httpsAgent;
                 requestConfig.httpAgent = httpAgent;
@@ -52,7 +52,7 @@ export default abstract class Scraper {
     }
 
     async get(url, headers = {}, proxy = false) {
-        let agent = this.proxyService.getProxyAgent();
+        let agent = await this.proxyService.getProxyAgent();
 
         return axios.get(url, {
             ...(proxy && {

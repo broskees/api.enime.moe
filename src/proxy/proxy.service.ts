@@ -1,29 +1,30 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { CACHE_MANAGER, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import Socks5Agent from 'axios-socks5-agent';
 import axios from 'axios';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export default class ProxyService {
-    private proxyList = [];
     private readonly listProxiesEndpoint = "https://raw.githubusercontent.com/jetkai/proxy-list/main/online-proxies/txt/proxies-socks5.txt";
 
-    constructor() {
+    constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {
     }
 
-    async load() {
-        const proxyList = await axios.get(this.listProxiesEndpoint);
+    private async getAvailableProxy() {
+        let proxyList = JSON.parse(await this.cacheManager.get("proxies"));
 
-        this.proxyList = proxyList.data.split("\n");
+        if (!proxyList) {
+            proxyList = (await axios.get(this.listProxiesEndpoint)).data.split("\n");
+            await this.cacheManager.set("proxies", JSON.stringify(proxyList), {
+                ttl: 1000 * 60 * 60 * 2
+            });
+        }
+
+        return proxyList[Math.floor(Math.random() * proxyList.length)];
     }
 
-    private getAvailableProxy() {
-        if (!this.proxyList.length) return undefined;
-
-        return this.proxyList[Math.floor(Math.random() * this.proxyList.length)];
-    }
-
-    public getProxyAgent() {
-        const proxy = this.getAvailableProxy();
+    public async getProxyAgent() {
+        const proxy = await this.getAvailableProxy();
 
         if (!proxy) return undefined;
 

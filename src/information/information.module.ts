@@ -15,9 +15,10 @@ import DatabaseModule from '../database/database.module';
 import ScraperModule from '../scraper/scraper.module';
 import MappingModule from '../mapping/mapping.module';
 import slugify from 'slugify';
+import ProxyModule from '../proxy/proxy.module';
 
 @Module({
-    imports: [BullModule.registerQueue({
+    imports: [ProxyModule, BullModule.registerQueue({
         name: "scrape"
     }), DatabaseModule, MappingModule],
     providers: [InformationService, ProxyService, ScraperService],

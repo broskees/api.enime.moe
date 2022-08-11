@@ -10,18 +10,7 @@ import axios from 'axios';
     exports: [ProxyService]
 })
 @Global()
-export default class ProxyModule implements OnModuleInit {
+export default class ProxyModule {
     constructor(private readonly proxyService: ProxyService) {
-    }
-
-    @Cron(CronExpression.EVERY_2_HOURS, {
-        name: "Refreshing proxy list"
-    })
-    async scheduledRefreshProxyList() {
-        await this.proxyService.load();
-    }
-
-    async onModuleInit() {
-        await this.proxyService.load();
     }
 }

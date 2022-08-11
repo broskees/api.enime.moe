@@ -28,8 +28,8 @@ export default class InformationService implements OnModuleInit {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
             },
-            fetch: (url, init) => {
-                const { httpsAgent } = this.proxyService.getProxyAgent();
+            fetch: async (url, init) => {
+                const { httpsAgent } = await this.proxyService.getProxyAgent();
 
                 return fetch(url, { agent: httpsAgent, ...init })
             }
