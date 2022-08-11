@@ -27,7 +27,12 @@ export default class ProxyService implements OnModuleInit {
     }
 
     private getAvailableProxy() {
-        return this.proxyList[Math.floor(Math.random() * this.proxyList.length)];
+        let randomized = undefined;
+        while (!randomized) {
+            randomized = this.proxyList[Math.floor(Math.random() * this.proxyList.length)];
+
+        }
+        return randomized;
     }
 
     async load() {
@@ -38,7 +43,6 @@ export default class ProxyService implements OnModuleInit {
 
     public getProxyAgent() {
         const proxy = this.getAvailableProxy();
-        if (!proxy) return undefined;
 
         const splitted = proxy.split(":");
 
