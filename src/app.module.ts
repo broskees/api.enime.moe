@@ -31,9 +31,10 @@ import SearchModule from './search/search.module';
 import MappingModule from './mapping/mapping.module';
 import ToolModule from './tool/tool.module';
 import * as redisStore from 'cache-manager-redis-store';
+import ProxyModule from './proxy/proxy.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({
+  imports: [ProxyModule, ConfigModule.forRoot({
     isGlobal: true
   }), CacheModule.register({
       store: redisStore,

@@ -12,9 +12,10 @@ import { transform } from '../helper/romaji';
 import * as path from 'path';
 import * as fs from 'fs';
 import DatabaseModule from '../database/database.module';
+import ProxyModule from '../proxy/proxy.module';
 
 @Module({
-    imports: [BullModule.registerQueue({
+    imports: [ProxyModule, BullModule.registerQueue({
         name: "scrape",
         processors: [fs.existsSync(path.join(__dirname, "scraper-processor.js")) ? path.join(__dirname, "scraper-processor.js") : path.join(__dirname, "scraper-processor.ts")]
     }), DatabaseModule, InformationModule],

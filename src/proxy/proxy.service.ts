@@ -1,38 +1,13 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import DatabaseService from '../database/database.service';
-import { Proxy, ProxyCallback, ProxyListResponse } from './proxy.interface';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { HttpsProxyAgent } from 'https-proxy-agent';
-import axios from 'axios';
+import { Injectable, Logger } from '@nestjs/common';
 import Socks5Agent from 'axios-socks5-agent';
+import axios from 'axios';
 
 @Injectable()
-export default class ProxyService implements OnModuleInit {
+export default class ProxyService {
+    private proxyList = [];
     private readonly listProxiesEndpoint = "https://raw.githubusercontent.com/jetkai/proxy-list/main/online-proxies/txt/proxies-socks5.txt";
 
-    private proxyList = [];
-
     constructor() {
-    }
-
-    @Cron(CronExpression.EVERY_2_HOURS, {
-        name: "Refreshing proxy list"
-    })
-    async scheduledRefreshProxyList() {
-        await this.load();
-    }
-
-    async onModuleInit() {
-        await this.load();
-    }
-
-    private getAvailableProxy() {
-        let randomized = undefined;
-        while (!randomized) {
-            randomized = this.proxyList[Math.floor(Math.random() * this.proxyList.length)];
-
-        }
-        return randomized;
     }
 
     async load() {
@@ -41,8 +16,16 @@ export default class ProxyService implements OnModuleInit {
         this.proxyList = proxyList.data.split("\n");
     }
 
+    private getAvailableProxy() {
+        if (!this.proxyList.length) return undefined;
+
+        return this.proxyList[Math.floor(Math.random() * this.proxyList.length)];
+    }
+
     public getProxyAgent() {
         const proxy = this.getAvailableProxy();
+
+        if (!proxy) return undefined;
 
         const splitted = proxy.split(":");
 

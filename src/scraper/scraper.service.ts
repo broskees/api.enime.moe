@@ -14,6 +14,8 @@ export default class ScraperService {
     }
 
     public async scrapers() {
+        await this.proxyService.load();
+
         if (this.importedScrapers.length) return this.importedScrapers;
 
         const files = (await fs.readdir(path.resolve(__dirname, "./impl"))).filter(file => {
