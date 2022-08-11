@@ -12,12 +12,10 @@ export default class ProxyService implements OnModuleInit {
 
     private proxyList = [];
 
-    private loading = false;
-
     constructor() {
     }
 
-    @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT, {
+    @Cron(CronExpression.EVERY_2_HOURS, {
         name: "Refreshing proxy list"
     })
     async scheduledRefreshProxyList() {
@@ -29,18 +27,13 @@ export default class ProxyService implements OnModuleInit {
     }
 
     private getAvailableProxy() {
-        if (this.loading) return undefined;
-
         return this.proxyList[Math.floor(Math.random() * this.proxyList.length)];
     }
 
     async load() {
-        this.loading = true;
-
         const proxyList = await axios.get(this.listProxiesEndpoint);
 
         this.proxyList = proxyList.data.split("\n");
-        this.loading = false;
     }
 
     public getProxyAgent() {

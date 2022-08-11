@@ -12,6 +12,8 @@ import { fork } from 'child_process';
 import path from 'path';
 import MappingService from '../mapping/mapping.service';
 import Prisma from '@prisma/client';
+import ProxyService from '../proxy/proxy.service';
+import fetch from 'node-fetch';
 
 @Injectable()
 export default class InformationService implements OnModuleInit {
@@ -20,11 +22,16 @@ export default class InformationService implements OnModuleInit {
     private readonly seasons = ["WINTER", "SPRING", "SUMMER", "FALL"];
     private informationWorker;
 
-    constructor(private readonly databaseService: DatabaseService, private readonly mappingService: MappingService, @InjectQueue("scrape") private readonly queue: Queue) {
+    constructor(private readonly databaseService: DatabaseService, private readonly proxyService: ProxyService, private readonly mappingService: MappingService, @InjectQueue("scrape") private readonly queue: Queue) {
         this.client = new GraphQLClient(this.anilistBaseEndpoint, {
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
+            },
+            fetch: (url, init) => {
+                const { httpsAgent } = this.proxyService.getProxyAgent();
+
+                return fetch(url, { agent: httpsAgent, ...init })
             }
         });
 
