@@ -8,7 +8,7 @@ class RapidCloud extends VideoExtractor {
     protected override serverName = 'RapidCloud';
     protected override sources: IVideo[] = [];
 
-    private readonly host = 'https://rapid-cloud.ru';
+    private readonly host = 'https://rapid-cloud.co';
 
     constructor(private readonly serverId) {
         super();
