@@ -62,7 +62,7 @@ export default class SearchController {
 
         const where = Prisma.sql`
             WHERE
-            ${all ? Prisma.empty : Prisma.sql`(anime.status != 'NOT_YET_RELEASED') AND`}
+            ${all ? Prisma.empty : Prisma.sql`(anime.status != 'NOT_YET_RELEASED') AND ("lastEpisodeUpdate" is not null) AND`}
             (
                 ${"%" + query + "%"} % ANY(synonyms)
                 OR  anime.title->>'english' ILIKE ${"%" + query + "%"}
