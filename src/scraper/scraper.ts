@@ -24,10 +24,9 @@ export default abstract class Scraper {
             retryDelay: () => 500,
             onRetry: async (number, __, requestConfig) => {
                 if (number < 9) {
-                    const { httpAgent, httpsAgent } = await this.proxyService.getProxyAgent();
+                    const httpsAgent = await this.proxyService.getProxyAgent();
 
                     requestConfig.httpsAgent = httpsAgent;
-                    requestConfig.httpAgent = httpAgent;
                 } else {
                     delete requestConfig["httpAgent"];
                     delete requestConfig["httpsAgent"];
@@ -57,11 +56,9 @@ export default abstract class Scraper {
     }
 
     async get(url, headers = {}, proxy = false) {
-        let agent = await this.proxyService.getProxyAgent();
-
         return axios.get(url, {
             ...(proxy && {
-                ...agent
+                ...await this.proxyService.getProxyAgent()
             }),
             headers: {
                 ...headers,
