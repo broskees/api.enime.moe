@@ -2,16 +2,19 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import DatabaseService from '../database/database.service';
 import { Proxy, ProxyCallback, ProxyListResponse } from './proxy.interface';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import fetch from 'node-fetch';
 import { HttpsProxyAgent } from 'https-proxy-agent';
+import axios from 'axios';
+import Socks5Agent from 'axios-socks5-agent';
 
 @Injectable()
 export default class ProxyService implements OnModuleInit {
-    private readonly listProxiesEndpoint = "https://proxy.webshare.io/api/proxy/list";
+    private readonly listProxiesEndpoint = "https://raw.githubusercontent.com/jetkai/proxy-list/main/online-proxies/txt/proxies-socks5.txt";
+
+    private proxyList = [];
 
     private loading = false;
 
-    constructor(private readonly databaseService: DatabaseService) {
+    constructor() {
     }
 
     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT, {
@@ -25,69 +28,35 @@ export default class ProxyService implements OnModuleInit {
         await this.load();
     }
 
-    private async getAvailableProxy(): Promise<Proxy> {
-        const available = await this.databaseService.proxy.findFirst({
-            orderBy: {
-                used: "asc"
-            }
-        });
+    private getAvailableProxy() {
+        if (this.loading) return undefined;
 
-        await this.databaseService.proxy.update({
-            where: {
-                id: available.id
-            },
-            data: {
-                used: {
-                    increment: 1
-                }
-            }
-        })
-        return available;
+        return this.proxyList[Math.floor(Math.random() * this.proxyList.length)];
     }
 
     async load() {
-        if (!process.env.WEBSHARE_API_KEY?.length) return;
-
         this.loading = true;
 
-        const proxyListResponse = (await (await fetch(this.listProxiesEndpoint, {
-            headers: this.authHeader()
-        })).json()) as ProxyListResponse;
+        const proxyList = await axios.get(this.listProxiesEndpoint);
 
-        if (proxyListResponse?.results) {
-            const proxies: ProxyCallback[] = proxyListResponse.results;
-
-            await this.databaseService.$transaction([
-                this.databaseService.proxy.deleteMany(),
-                this.databaseService.proxy.createMany({
-                    data: proxies.map(proxy => {
-                        return {
-                            username: proxy.username,
-                            password: proxy.password,
-                            port_http: proxy.ports.http,
-                            port_socks5: proxy.ports.socks5,
-                            address: proxy.proxy_address,
-                            country: proxy.country_code,
-                            city: proxy.city_name,
-                            used: 0,
-                        }
-                    })
-                })
-            ])
-        }
+        this.proxyList = proxyList.data.split("\n");
         this.loading = false;
     }
 
-    private authHeader(original = {}) {
-        return {
-            ...original,
-            Authorization: process.env.WEBSHARE_API_KEY
-        }
-    }
+    public getProxyAgent() {
+        const proxy = this.getAvailableProxy();
+        if (!proxy) return undefined;
 
-    public async getProxyAgent() {
-        const proxy = await this.getAvailableProxy();
+        const splitted = proxy.split(":");
 
-        return new HttpsProxyAgent(`socks://${proxy.username}:${proxy.password}@${proxy.address}:${proxy.port_socks5}`);
+        const { httpAgent, httpsAgent } = Socks5Agent({
+            agentOptions: {
+                keepAlive: true,
+            },
+            host: splitted[0],
+            port: Number.parseInt(splitted[1]),
+        })
+
+        return { httpAgent, httpsAgent };
     }
 }

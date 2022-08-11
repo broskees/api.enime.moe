@@ -3,7 +3,6 @@ import * as cheerio from 'cheerio';
 import * as similarity from 'string-similarity';
 import { Episode, RawSource } from '../../types/global';
 import { clean, removeSpecialChars } from '../../helper/title';
-import fetch from 'node-fetch';
 import { deepMatch } from '../../helper/match';
 import RapidCloud from '../../extractor/impl/rapidcloud';
 
@@ -38,13 +37,11 @@ export default class Zoro extends Scraper {
 
         const url = `${this.url()}/ajax/v2/episode/servers?episodeId=${sourceUrl.searchParams.get("ep")}`;
 
-        let response = await fetch(url, {
-            headers: {
-                Referer: sourceUrl.href,
-            }
-        });
+        let response = await this.get(url, {
+            Referer: sourceUrl.href,
+        }, false);
 
-        const $ = cheerio.load((await response.json()).html);
+        const $ = cheerio.load((await response.data).html);
         const serverId = $('div.ps_-block.ps_-block-sub.servers-sub > div.ps__-list > div')
             .map((i, el) => ($(el).attr("data-server-id") == "1" ? $(el) : null))
             .get()[0]
@@ -52,9 +49,9 @@ export default class Zoro extends Scraper {
 
         if (!serverId) return undefined;
 
-        response = await fetch(`${this.url()}/ajax/v2/episode/sources?id=${serverId}`);
+        response = await this.get(`${this.url()}/ajax/v2/episode/sources?id=${serverId}`, {}, false);
 
-        const videoUrl = new URL((await response.json()).link);
+        const videoUrl = new URL((await response.data).link);
 
         const video = await (new RapidCloud(config.serverId).extract(videoUrl));
 
@@ -68,14 +65,12 @@ export default class Zoro extends Scraper {
     }
 
     async fetch(path: string): Promise<Episode[]> {
-        const response = await fetch(`${this.url()}/ajax/v2/episode/list/${path.split("-").pop()}`, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                Referer: `${this.url()}/watch${path}`,
-            },
-        });
+        const response = await this.get(`${this.url()}/ajax/v2/episode/list/${path.split("-").pop()}`, {
+            'X-Requested-With': 'XMLHttpRequest',
+            Referer: `${this.url()}/watch${path}`,
+        }, true);
 
-        const r = (await (await response).json());
+        const r = (await (await response).data);
 
         if (!r.status) return undefined;
 
@@ -122,8 +117,8 @@ export default class Zoro extends Scraper {
     async match(t) {
         let url = `${this.url()}/search?keyword=${decodeURIComponent(t.current.replaceAll(" ", "+"))}`;
 
-        const response = await fetch(url); // No need to proxy here since Zoro.to does not really block people from scraping
-        const $ = cheerio.load(await (await response).text());
+        const response = await this.get(url); // No need to proxy here since Zoro.to does not really block people from scraping
+        const $ = cheerio.load(await (await response).data);
 
         const results = [];
 

@@ -33,12 +33,14 @@ export default class ScraperModule implements OnModuleInit {
     async matchAnime(title, scraper: Scraper): Promise<AnimeWebPage> {
         if (!("original" in title)) title.original = true;
 
-        title.tries = title.tries++ || 1;
+        title.tries = ++title.tries || 1;
 
         let original = title.original, special = title.special;
         if (original) title.current = title.english || title.romaji;
+        Logger.debug("A", scraper.name());
 
         let matchedEntry = await scraper.match(title);
+        Logger.debug("B", matchedEntry);
 
         if (!matchedEntry) {
             if (title.tries >= 50) throw new Error(`Anime matching for title ${title} resulted into a potential infinite loop, skipping this match to preserve the scraper functionality`);
@@ -74,12 +76,14 @@ export default class ScraperModule implements OnModuleInit {
 
                 if ((title.current === title.romaji) && (title.current !== transform(title.romaji))) {
                     title.current = transform(title.romaji);
+                    title.original = false;
 
                     return this.matchAnime(title, scraper);
                 }
 
                 if (title.current === transform(title.romaji)) {
                     title.special = true;
+                    title.original = false;
 
                     return this.matchAnime(title, scraper);
                 }

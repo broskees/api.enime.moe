@@ -46,11 +46,26 @@ export default class InformationModule implements OnModuleInit {
     // Every 10 minutes, we check anime that have don't have "enough episode" stored in the database (mostly the anime source sites update slower than Anilist because subs stuff) so we sync that part more frequently
     @Cron(CronExpression.EVERY_10_MINUTES)
     async checkForUpdatedEpisodes() {
+        await this.updateOnCondition({
+            status: {
+                in: ["RELEASING"]
+            }
+        })
+    }
+
+    @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+    async checkForUpdatedEpisodesForFinishedAnime() {
+        await this.updateOnCondition({
+            status: {
+                in: ["FINISHED"]
+            }
+        })
+    }
+
+    async updateOnCondition(condition) {
         const animeList = await this.databaseService.anime.findMany({
             where: {
-                status: {
-                    in: ["RELEASING", "FINISHED"]
-                }
+                ...condition
             },
             select: {
                 id: true,
@@ -74,6 +89,7 @@ export default class InformationModule implements OnModuleInit {
         });
     }
 
+    /*
     @Cron(CronExpression.EVERY_HOUR)
     async refreshAnimeInfo() {
         const animeList = await this.databaseService.anime.findMany({
@@ -97,6 +113,7 @@ export default class InformationModule implements OnModuleInit {
             removeOnComplete: true
         });
     }
+     */
 
     @Cron(CronExpression.EVERY_12_HOURS)
     async updateRelations() {
@@ -137,12 +154,12 @@ export default class InformationModule implements OnModuleInit {
         await this.informationService.executeWorker("fetch-relation", ids.map(id => id.id));
     }
 
-    @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+    @Cron(CronExpression.EVERY_WEEK)
     async pushToScrapeQueue() {
         const eligibleToScrape = await this.databaseService.anime.findMany({
             where: {
                 status: {
-                    in: ["RELEASING"]
+                    in: ["RELEASING", "FINISHED"]
                 }
             },
             select: {

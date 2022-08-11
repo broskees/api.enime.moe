@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import DatabaseService from '../database/database.service';
 import ScraperService from './scraper.service';
 import fetch from 'node-fetch';
+import { sleep } from '../helper/tool';
 
 export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
     const app = await NestFactory.create(ScraperModule);
@@ -26,17 +27,22 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
         const anime = await databaseService.anime.findUnique({
             where: {
                 id
+            },
+            include: {
+                _count: {
+                    select: { episodes: true },
+                },
             }
         });
 
         if (!anime) {
             Logger.debug(`Scraper queue detected an ID ${id} but its corresponding anime entry does not exist in the database. Skipping this job.`);
-            return;
+            continue;
         }
 
         if (anime.status === "NOT_YET_RELEASED") {
             Logger.debug(`Scraper queue detected an ID ${id} is not yet released, skipping this job.`);
-            return;
+            continue;
         }
 
         let malSyncData;
@@ -73,13 +79,13 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
 
                             matchedAnimeEntry = {
                                 title: malSyncEntry.title,
-                                path: (new URL(malSyncEntry.url)).pathname
+                                path: (new URL(malSyncEntry.url)).pathname?.replace("gogoanime.lu", "gogoanime.gg")
                             }
                         }
                     }
                 }
 
-                if (!matchedAnimeEntry) matchedAnimeEntry = await scraperModule.matchAnime(anime.title, scraper);
+               //  if (!matchedAnimeEntry) matchedAnimeEntry = await scraperModule.matchAnime(anime.title, scraper);
                 if (!matchedAnimeEntry) continue;
 
                 let episodeToScrapeLower = Number.MAX_SAFE_INTEGER, episodeToScraperHigher = Number.MIN_SAFE_INTEGER;
@@ -111,9 +117,10 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
 
                 try {
                     let scrapedEpisodes = scraper.fetch(matchedAnimeEntry.path, episodeToScrapeLower, episodeToScraperHigher);
-
                     if (scrapedEpisodes instanceof Promise) scrapedEpisodes = await scrapedEpisodes;
+
                     if (!scrapedEpisodes) continue;
+                    if (Array.isArray(scrapedEpisodes) && !scrapedEpisodes.length) continue;
 
                     if (!Array.isArray(scrapedEpisodes)) scrapedEpisodes = [scrapedEpisodes];
                     if (scrapedEpisodes.length > anime.currentEpisode) continue; // STOP! This anime source site uses a different episode numbering strategy that it will potentially break the database. Don't bother use this anime's information from this site

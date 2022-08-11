@@ -7,7 +7,7 @@ export default class DatabaseService extends PrismaClient implements OnModuleIni
     constructor() {
         super({
             ...(!process.env.PRODUCTION && {
-                log: ["query", "error"]
+                // log: ["query", "error"]
             })
         });
     }

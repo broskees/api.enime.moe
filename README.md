@@ -9,7 +9,6 @@ To deploy Enime API, you need following services:
 2. PostgresSQL - You can get a free hosting at https://planetscale.com/
 3. Node.js (>=v16) - You can install it at https://nodejs.org/en/download/
 4. Pnpm - You can install it at https://pnpm.io/
-5. Webshare (Optional) - You can get the free plan at https://www.webshare.io/
 
 ### Steps
 1. Install dependencies with ``pnpm install``
@@ -17,7 +16,6 @@ To deploy Enime API, you need following services:
 ```
 PORT={the port that application is going to run on}
 DATABASE_URL={the postgres database connection url}
-WEBSHARE_API_KEY={the API key for Webshare.io (Optional)}
 REDIS_HOST={Redis host}
 REDIS_PORT={Redis port}
 REDIS_PASSWORD={Redis password}

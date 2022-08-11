@@ -5,6 +5,7 @@ import fetch from 'node-fetch';
 import * as similarity from 'string-similarity';
 import { deepMatch } from '../../helper/match';
 import GogoCDN from '../../extractor/impl/gogocdn';
+import { sleep } from '../../helper/tool';
 
 // Credit to https://github.com/riimuru/gogoanime/blob/46edf3de166b7c5152919d6ac12ab6f55d9ed35b/lib/helpers/extractors/goload.js
 export default class GogoanimeScraper extends Scraper {
@@ -41,14 +42,18 @@ export default class GogoanimeScraper extends Scraper {
     async fetch(path: string, startNumber: number, endNumber: number): Promise<Episode[]> {
         let url = `${this.url()}${path}`;
 
-        let response = this.get(url, {}, false);
-        let $ = cheerio.load(await (await response).text());
+        let response = this.get(url, {}, true);
+        let responseText = await (await response).data;
+
+        let $ = cheerio.load(responseText);
 
         const movieId = $("#movie_id").attr("value");
 
         url = `https://ajax.gogo-load.com/ajax/load-list-episode?ep_start=${startNumber}&ep_end=${endNumber}&id=${movieId}`;
-        response = this.get(url, {}, false);
-        $ = cheerio.load(await (await response).text());
+        response = this.get(url, {}, true);
+        responseText = await (await response).data;
+
+        $ = cheerio.load(responseText);
 
         const episodesSource = [];
 
@@ -64,8 +69,10 @@ export default class GogoanimeScraper extends Scraper {
         for (let episode of episodesSource) {
             if (!episode.url) continue;
 
-            let embedResponse = this.get(episode.url, {}, false);
-            let $$ = cheerio.load(await (await embedResponse).text());
+            let embedResponse = this.get(episode.url, {}, true);
+            let embedResponseText = await (await embedResponse).data;
+
+            let $$ = cheerio.load(embedResponseText);
 
             let embedUrl = $$("iframe").first().attr("src");
 
@@ -78,7 +85,7 @@ export default class GogoanimeScraper extends Scraper {
                 format: "m3u8",
                 referer: episode.url,
                 type: SourceType.PROXY
-            })
+            });
         }
 
         return episodesMapped;
@@ -88,12 +95,13 @@ export default class GogoanimeScraper extends Scraper {
         let url = `${this.url()}/search.html?keyword=${encodeURIComponent(t.current)}`;
 
         // Credit to https://github.com/AniAPI-Team/AniAPI/blob/main/ScraperEngine/resources/gogoanime.py
-        let response = this.get(url, {}, false);
-        let $ = cheerio.load(await (await response).text());
+        let response = this.get(url, {}, true);
+        const responseText = await (await response).data;
+        let $ = cheerio.load(responseText);
 
         let showElement = $(".last_episodes > ul > li").first();
 
-        if (!showElement.length) return undefined;
+        if (!showElement?.length) return undefined;
 
         let link = $(showElement).find(".name > a");
         let title = link.attr("title"), path = link.attr("href");

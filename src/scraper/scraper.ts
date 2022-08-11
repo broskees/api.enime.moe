@@ -1,7 +1,11 @@
-import fetch from 'node-fetch';
+import axios from 'axios';
 import { Episode, AnimeWebPage, WebsiteMeta, RawSource } from '../types/global';
 export const USER_AGENT =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36';
+
+import axiosRetry from 'axios-retry';
+import ProxyService from '../proxy/proxy.service';
+
 
 export default abstract class Scraper {
     public infoOnly = false;
@@ -12,7 +16,20 @@ export default abstract class Scraper {
 
     public websiteMeta: WebsiteMeta = undefined;
 
-    constructor() {}
+    constructor(private readonly proxyService: ProxyService) {
+        axiosRetry(axios, {
+            retries: 10,
+            shouldResetTimeout: true,
+            retryCondition: (_error) => true,
+            retryDelay: () => 6000,
+            onRetry: (_, __, requestConfig) => {
+                const { httpAgent, httpsAgent } = this.proxyService.getProxyAgent();
+
+                requestConfig.httpsAgent = httpsAgent;
+                requestConfig.httpAgent = httpAgent;
+            }
+        });
+    }
 
     abstract name(): string;
 
@@ -35,29 +52,17 @@ export default abstract class Scraper {
     }
 
     async get(url, headers = {}, proxy = false) {
-        let agent = undefined;
+        let agent = this.proxyService.getProxyAgent();
 
-        return fetch(url, {
+        return axios.get(url, {
             ...(proxy && {
-                agent: agent
+                ...agent
             }),
             headers: {
                 ...headers,
                 "User-Agent": USER_AGENT
-            }
-        });
-    }
-
-    async post(url, headers = {}, body: any = undefined, proxy = false) {
-        let agent = undefined;
-
-        return fetch(url, {
-            ...(proxy && {
-                agent: agent
-            }),
-            method: "POST",
-            headers: headers,
-            body: body
+            },
+            timeout: 2000
         });
     }
 
