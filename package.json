@@ -44,7 +44,7 @@
     "ascii-url-encoder": "^1.2.0",
     "aws-sdk": "^2.1180.0",
     "axios": "^0.27.2",
-    "axios-retry": "^3.3.1",
+    "@enime-project/axios-retry": "^3.3.2",
     "axios-socks5-agent": "^1.0.5",
     "bull": "^4.8.4",
     "cache-manager": "^4.1.0",

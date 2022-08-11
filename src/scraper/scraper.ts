@@ -3,7 +3,7 @@ import { Episode, AnimeWebPage, WebsiteMeta, RawSource } from '../types/global';
 export const USER_AGENT =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36';
 
-import axiosRetry from 'axios-retry';
+import axiosRetry from '@enime-project/axios-retry';
 import ProxyService from '../proxy/proxy.service';
 
 
@@ -21,12 +21,17 @@ export default abstract class Scraper {
             retries: 10,
             shouldResetTimeout: true,
             retryCondition: (_error) => true,
-            retryDelay: () => 6000,
-            onRetry: async (_, __, requestConfig) => {
-                const { httpAgent, httpsAgent } = await this.proxyService.getProxyAgent();
+            retryDelay: () => 500,
+            onRetry: async (number, __, requestConfig) => {
+                if (number < 9) {
+                    const { httpAgent, httpsAgent } = await this.proxyService.getProxyAgent();
 
-                requestConfig.httpsAgent = httpsAgent;
-                requestConfig.httpAgent = httpAgent;
+                    requestConfig.httpsAgent = httpsAgent;
+                    requestConfig.httpAgent = httpAgent;
+                } else {
+                    delete requestConfig["httpAgent"];
+                    delete requestConfig["httpsAgent"];
+                }
             }
         });
     }

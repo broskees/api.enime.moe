@@ -5,7 +5,7 @@ import { Cache } from 'cache-manager';
 
 @Injectable()
 export default class ProxyService {
-    private readonly listProxiesEndpoint = "https://raw.githubusercontent.com/jetkai/proxy-list/main/online-proxies/txt/proxies-socks5.txt";
+    private readonly listProxiesEndpoint = "https://raw.githubusercontent.com/hookzof/socks5_list/master/proxy.txt";
 
     constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {
     }
@@ -20,7 +20,9 @@ export default class ProxyService {
             });
         }
 
-        return proxyList[Math.floor(Math.random() * proxyList.length)];
+        let random = proxyList[Math.floor(Math.random() * proxyList.length)];
+
+        return random;
     }
 
     public async getProxyAgent() {
