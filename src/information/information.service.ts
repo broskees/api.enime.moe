@@ -280,7 +280,7 @@ export default class InformationService implements OnModuleInit {
         return {
             title: anilistAnime.title,
             anilistId: anilistAnime.id,
-            slug: slugify(anilistAnime.title.userPreferred || anilistAnime.title.english || anilistAnime.title.romaji).toLowerCase(),
+            slug: slugify(anilistAnime.title.english || anilistAnime.title.romaji).toLowerCase(),
             coverImage: anilistAnime.coverImage.extraLarge,
             color: anilistAnime.coverImage.color,
             bannerImage: anilistAnime.bannerImage,
@@ -331,6 +331,7 @@ export default class InformationService implements OnModuleInit {
             const animeDbObject = await this.convertToDbAnime(anilistAnime);
 
             let id = cuid();
+
             await this.databaseService.anime.create({
                 data: {
                     id: id,

@@ -14,6 +14,7 @@ import ProxyService from '../proxy/proxy.service';
 import DatabaseModule from '../database/database.module';
 import ScraperModule from '../scraper/scraper.module';
 import MappingModule from '../mapping/mapping.module';
+import slugify from 'slugify';
 
 @Module({
     imports: [BullModule.registerQueue({
@@ -159,5 +160,6 @@ export default class InformationModule implements OnModuleInit {
     }
 
     async onModuleInit() {
+
     }
 }

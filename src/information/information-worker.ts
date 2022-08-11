@@ -31,6 +31,20 @@ async function bootstrap() {
                 event: "fetch-specific",
                 data: updatedAnimeId
             });
+        } else if (event === "fetch-specific-batch") {
+            Logger.debug("[InformationWorker] Start fetching a batch of specific anime under administrator's request");
+            const updatedAnimeIds = [];
+
+            for (let animeId of data) {
+                const updatedAnimeId = await service.fetchAnimeByAnilistID(animeId);
+                await sleep(1000);
+
+                updatedAnimeIds.push(updatedAnimeId);
+            }
+            process.send({
+                event: "fetch-specific-batch",
+                data: updatedAnimeIds
+            });
         } else if (event === "fetch-relation") {
             Logger.debug("[InformationWorker] Start fetching relations for anime");
             const ids = Array.isArray(data) ? data : [data];

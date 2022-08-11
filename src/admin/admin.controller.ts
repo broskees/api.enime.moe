@@ -1,5 +1,5 @@
 import { SkipThrottle } from '@nestjs/throttler';
-import { Body, Controller, Get, Param, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseArrayPipe, Put, UseGuards } from '@nestjs/common';
 import { ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { AdminGuard } from './admin.guard';
 import InformationService from '../information/information.service';
@@ -17,8 +17,17 @@ export default class AdminController {
     constructor(private readonly informationService: InformationService, private readonly scraperService: ScraperService, private readonly databaseService: DatabaseService, @InjectQueue("scrape") private readonly queue: Queue) {
     }
 
-    @Put("/anime")
-    async fetchAnime(@Body() animeId) {
+    @Put("/anime/batch")
+    @NoCache()
+    async fetchAnimeBatch(@Body(new ParseArrayPipe({ items: Number })) animeIds: number[]) {
+        await this.informationService.executeWorker("fetch-specific-batch", animeIds);
+
+        return "Done";
+    }
+
+    @Get("/anime/:id")
+    @NoCache()
+    async fetchAnime(@Param("id") animeId: number | string) {
         await this.informationService.executeWorker("fetch-specific", animeId);
 
         return "Done";
