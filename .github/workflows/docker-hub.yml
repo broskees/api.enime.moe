@@ -16,3 +16,5 @@ jobs:
         run: docker build -t enime/api:1.0 .
       - name: Docker Push
         run: docker push enime/api:1.0
+      - name: Trigger deploy webhook
+        run: curl -X POST ${{ secrest.DEPLOY_WEBHOOK }}
