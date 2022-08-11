@@ -51,6 +51,7 @@ async function bootstrap() {
 
             for (let id of ids) {
                 await service.fetchRelations(id);
+                await sleep(1000);
             }
 
             process.send({

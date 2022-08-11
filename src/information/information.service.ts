@@ -28,11 +28,14 @@ export default class InformationService implements OnModuleInit {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
             },
+            /*
             fetch: async (url, init) => {
                 const { httpsAgent } = await this.proxyService.getProxyAgent();
 
                 return fetch(url, { agent: httpsAgent, ...init })
             }
+
+             */
         });
 
         if (!process.env.TESTING) dayjs.extend(utc);

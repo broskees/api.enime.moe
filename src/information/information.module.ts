@@ -29,7 +29,7 @@ export default class InformationModule implements OnModuleInit {
         if (!process.env.TESTING) dayjs.extend(utc);
     }
 
-    @Cron(CronExpression.EVERY_MINUTE)
+    @Cron(CronExpression.EVERY_5_MINUTES)
     async updateAnime() {
         Logger.debug("Now we start refetching currently releasing anime from Anilist");
         performance.mark("information-fetch-start");
