@@ -23,7 +23,6 @@ export default abstract class Scraper {
             retryCondition: (_error) => true,
             retryDelay: () => 500,
             onRetry: async (number, __, requestConfig) => {
-                console.log(requestConfig)
                 if (number < 9) {
                     const { http, agent } = await this.proxyService.getProxyAgent();
 
@@ -47,7 +46,7 @@ export default abstract class Scraper {
 
     abstract match(title): AnimeWebPage | Promise<AnimeWebPage>;
 
-    abstract fetch(path: string, number: number, endNumber: number | undefined): Episode | Promise<Episode> | Promise<Episode[]> | Episode[];
+    abstract fetch(path: string, number: number, endNumber: number | undefined, excludedNumbers: number[] | undefined): Episode | Promise<Episode> | Promise<Episode[]> | Episode[];
 
     async getSourceConsumet(sourceUrl: string | URL): Promise<RawSource> {
         return undefined;

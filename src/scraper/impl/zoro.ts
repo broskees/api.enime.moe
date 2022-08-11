@@ -64,7 +64,7 @@ export default class Zoro extends Scraper {
         };
     }
 
-    async fetch(path: string): Promise<Episode[]> {
+    async fetch(path: string, _, __, excludedNumbers: number[]): Promise<Episode[]> {
         const response = await this.get(`${this.url()}/ajax/v2/episode/list/${path.split("-").pop()}`, {
             'X-Requested-With': 'XMLHttpRequest',
             Referer: `${this.url()}/watch${path}`,
@@ -80,6 +80,8 @@ export default class Zoro extends Scraper {
 
         $("div.detail-infor-content > div > a").each((i, el) => {
             const number = parseInt($(el).attr('data-number')!);
+            if (excludedNumbers.includes(number)) return;
+
             let title = $(el).attr('title');
             const url = this.url() + $(el).attr('href');
             const filler = $(el).hasClass('ssl-item-filler');

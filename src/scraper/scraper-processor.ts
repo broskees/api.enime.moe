@@ -90,6 +90,8 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
 
                 let episodeToScrapeLower = Number.MAX_SAFE_INTEGER, episodeToScraperHigher = Number.MIN_SAFE_INTEGER;
 
+                const excludedNumbers = [];
+
                 for (let i = 1; i <= anime.currentEpisode; i++) {
                     const episodeWithSource = await databaseService.episode.findFirst({
                         where: {
@@ -111,6 +113,7 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                         continue;
                     }
 
+                    excludedNumbers.push(i);
                     episodeToScrapeLower = Math.min(episodeToScrapeLower, i);
                     episodeToScraperHigher = Math.max(episodeToScraperHigher, i);
                 }
@@ -118,7 +121,7 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                 if (episodeToScraperHigher === Number.MIN_SAFE_INTEGER || episodeToScrapeLower === Number.MAX_SAFE_INTEGER) continue;
 
                 try {
-                    let scrapedEpisodes = scraper.fetch(matchedAnimeEntry.path, episodeToScrapeLower, episodeToScraperHigher);
+                    let scrapedEpisodes = scraper.fetch(matchedAnimeEntry.path, episodeToScrapeLower, episodeToScraperHigher, excludedNumbers);
                     if (scrapedEpisodes instanceof Promise) scrapedEpisodes = await scrapedEpisodes;
 
                     if (!scrapedEpisodes) continue;

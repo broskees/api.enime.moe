@@ -39,7 +39,7 @@ export default class GogoanimeScraper extends Scraper {
         }
     }
 
-    async fetch(path: string, startNumber: number, endNumber: number): Promise<Episode[]> {
+    async fetch(path: string, startNumber: number, endNumber: number, excludedNumbers: number[]): Promise<Episode[]> {
         let url = `${this.url()}${path}`;
 
         let response = this.get(url, {});
@@ -58,8 +58,11 @@ export default class GogoanimeScraper extends Scraper {
         const episodesSource = [];
 
         $("#episode_related > li").each((i, el) => {
+            const number = parseInt($(el).find(`div.name`).text().replace("EP ", ""));
+            if (excludedNumbers.includes(number)) return;
+
             episodesSource.push({
-                number: parseInt($(el).find(`div.name`).text().replace("EP ", "")),
+                number: number,
                 url: `${this.url()}${$(el).find(`a`).attr('href')?.trim()}`,
             });
         });
