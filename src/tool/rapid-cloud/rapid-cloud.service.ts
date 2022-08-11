@@ -1,13 +1,14 @@
 import { CACHE_MANAGER, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import WebSocket from 'ws';
+import WS from 'ws';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Cache } from 'cache-manager';
 import Source from '../../entity/source.entity';
+import ReconnectingWebSocket from 'reconnecting-websocket';
 
 @Injectable()
 export default class RapidCloudService implements OnModuleInit {
     public serverId: string;
-    private websocket: WebSocket;
+    private websocket: ReconnectingWebSocket;
     private intervalId;
 
     constructor(@Inject(CACHE_MANAGER) private readonly cacheManager: Cache) {
@@ -41,17 +42,21 @@ export default class RapidCloudService implements OnModuleInit {
         }
 
 
-        this.websocket = new WebSocket("wss://ws1.rapid-cloud.co/socket.io/?EIO=4&transport=websocket");
+        this.websocket = new ReconnectingWebSocket("wss://ws1.rapid-cloud.co/socket.io/?EIO=4&transport=websocket", [], {
+            WebSocket: WS,
+            reconnectionDelayGrowFactor: 1.0 // Don't use grow factor
+        });
 
         try {
-            this.websocket.on("open", () => {
+            this.websocket.addEventListener("open", () => {
                 this.websocket.send("40");
+                if (this.intervalId) clearInterval(this.intervalId);
                 this.intervalId = setInterval(() => {
                     this.websocket.send("3");
                 }, 20000);
             });
 
-            this.websocket.on("message", (data: string) => {
+            this.websocket.addEventListener("message", ({ data }) => {
                 data = data.toString();
                 if (data?.startsWith("40")) {
                     this.serverId = JSON.parse(data.split("40")[1]).sid;
@@ -60,7 +65,7 @@ export default class RapidCloudService implements OnModuleInit {
                 }
             });
 
-            this.websocket.on("error", () => {
+            this.websocket.addEventListener("error", () => {
                 Logger.error("Websocket error");
             });
         } catch (e) {
