@@ -58,7 +58,7 @@ export default abstract class Scraper {
     async get(url, headers = {}, proxy = false) {
         return axios.get(url, {
             ...(proxy && {
-                ...await this.proxyService.getProxyAgent()
+                httpsAgent: await this.proxyService.getProxyAgent()
             }),
             headers: {
                 ...headers,
