@@ -42,7 +42,7 @@ export default class GogoanimeScraper extends Scraper {
     async fetch(path: string, startNumber: number, endNumber: number): Promise<Episode[]> {
         let url = `${this.url()}${path}`;
 
-        let response = this.get(url, {}, true);
+        let response = this.get(url, {});
         let responseText = await (await response).data;
 
         let $ = cheerio.load(responseText);
@@ -50,7 +50,7 @@ export default class GogoanimeScraper extends Scraper {
         const movieId = $("#movie_id").attr("value");
 
         url = `https://ajax.gogo-load.com/ajax/load-list-episode?ep_start=${startNumber}&ep_end=${endNumber}&id=${movieId}`;
-        response = this.get(url, {}, true);
+        response = this.get(url, {});
         responseText = await (await response).data;
 
         $ = cheerio.load(responseText);
@@ -69,7 +69,7 @@ export default class GogoanimeScraper extends Scraper {
         for (let episode of episodesSource) {
             if (!episode.url) continue;
 
-            let embedResponse = this.get(episode.url, {}, true);
+            let embedResponse = this.get(episode.url, {});
             let embedResponseText = await (await embedResponse).data;
 
             let $$ = cheerio.load(embedResponseText);
@@ -95,7 +95,7 @@ export default class GogoanimeScraper extends Scraper {
         let url = `${this.url()}/search.html?keyword=${encodeURIComponent(t.current)}`;
 
         // Credit to https://github.com/AniAPI-Team/AniAPI/blob/main/ScraperEngine/resources/gogoanime.py
-        let response = this.get(url, {}, true);
+        let response = this.get(url, {});
         const responseText = await (await response).data;
         let $ = cheerio.load(responseText);
 

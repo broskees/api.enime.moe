@@ -115,6 +115,8 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                     episodeToScraperHigher = Math.max(episodeToScraperHigher, i);
                 }
 
+                if (episodeToScraperHigher === Number.MIN_SAFE_INTEGER || episodeToScrapeLower === Number.MAX_SAFE_INTEGER) continue;
+
                 try {
                     let scrapedEpisodes = scraper.fetch(matchedAnimeEntry.path, episodeToScrapeLower, episodeToScraperHigher);
                     if (scrapedEpisodes instanceof Promise) scrapedEpisodes = await scrapedEpisodes;

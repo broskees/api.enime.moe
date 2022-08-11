@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 import { Episode, AnimeWebPage, WebsiteMeta, RawSource } from '../types/global';
 export const USER_AGENT =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36';
@@ -23,10 +23,12 @@ export default abstract class Scraper {
             retryCondition: (_error) => true,
             retryDelay: () => 500,
             onRetry: async (number, __, requestConfig) => {
+                console.log(requestConfig)
                 if (number < 9) {
-                    const httpsAgent = await this.proxyService.getProxyAgent();
+                    const { http, agent } = await this.proxyService.getProxyAgent();
 
-                    requestConfig.httpsAgent = httpsAgent;
+                    if (http) requestConfig.httpAgent = agent;
+                    else requestConfig.httpsAgent = agent;
                 } else {
                     delete requestConfig["httpAgent"];
                     delete requestConfig["httpsAgent"];
@@ -55,17 +57,15 @@ export default abstract class Scraper {
         return undefined;
     }
 
-    async get(url, headers = {}, proxy = false) {
-        return axios.get(url, {
-            ...(proxy && {
-                httpsAgent: await this.proxyService.getProxyAgent()
-            }),
+    async get(url, headers = {}) {
+        const requestConfig: AxiosRequestConfig<any> = {
             headers: {
                 ...headers,
                 "User-Agent": USER_AGENT
             },
             timeout: 2000
-        });
+        }
+        return axios.get(url, requestConfig);
     }
 
 }

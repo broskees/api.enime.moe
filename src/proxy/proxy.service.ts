@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Cache } from 'cache-manager';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 import { HttpsProxyAgent } from 'https-proxy-agent';
+import { HttpProxyAgent } from 'http-proxy-agent';
 
 @Injectable()
 export default class ProxyService {
@@ -54,16 +55,16 @@ export default class ProxyService {
         const splitted = proxy.address.split(":");
 
         const host = splitted[0], port = splitted[1];
-        let httpsAgent;
+        let agent;
 
         if (type === "socks5") {
-            httpsAgent = new SocksProxyAgent(`socks5://${host}:${port}`);
+            agent = new SocksProxyAgent(`socks5://${host}:${port}`);
         } else if (type === "socks4") {
-            httpsAgent = new SocksProxyAgent(`socks4://${host}:${port}`);
+            agent = new SocksProxyAgent(`socks4://${host}:${port}`);
         } else if (type === "http") {
-            httpsAgent = new HttpsProxyAgent(`https://${host}:${port}`);
+            agent = new HttpProxyAgent(`http://${host}:${port}`);
         }
 
-        return httpsAgent;
+        return { http: type === "http", agent };
     }
 }

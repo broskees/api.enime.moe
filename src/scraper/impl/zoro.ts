@@ -39,7 +39,7 @@ export default class Zoro extends Scraper {
 
         let response = await this.get(url, {
             Referer: sourceUrl.href,
-        }, false);
+        });
 
         const $ = cheerio.load((await response.data).html);
         const serverId = $('div.ps_-block.ps_-block-sub.servers-sub > div.ps__-list > div')
@@ -49,7 +49,7 @@ export default class Zoro extends Scraper {
 
         if (!serverId) return undefined;
 
-        response = await this.get(`${this.url()}/ajax/v2/episode/sources?id=${serverId}`, {}, false);
+        response = await this.get(`${this.url()}/ajax/v2/episode/sources?id=${serverId}`, {});
 
         const videoUrl = new URL((await response.data).link);
 
@@ -68,7 +68,7 @@ export default class Zoro extends Scraper {
         const response = await this.get(`${this.url()}/ajax/v2/episode/list/${path.split("-").pop()}`, {
             'X-Requested-With': 'XMLHttpRequest',
             Referer: `${this.url()}/watch${path}`,
-        }, true);
+        });
 
         const r = (await (await response).data);
 
