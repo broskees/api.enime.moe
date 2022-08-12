@@ -6,6 +6,7 @@ import { PaginateFunction } from 'prisma-pagination/src';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import Anime from '../entity/anime.entity';
 import { Prisma } from '@prisma/client';
+import Search from '../entity/search.entity';
 
 @Controller("/search")
 @ApiTags("search")
@@ -23,8 +24,7 @@ export default class SearchController {
     @ApiResponse({
         status: 200,
         description: "The list of anime matched from search query",
-        type: Anime,
-        isArray: true
+        type: Search
     })
     @ApiResponse({
         status: 429,

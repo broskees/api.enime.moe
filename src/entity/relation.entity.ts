@@ -2,12 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export default class Relation {
     @ApiProperty({
-        description: "Related anime ID",
+        description: "Related anime",
         type: Object
     })
-    anime: {
-        id: String
-    }
+    anime: object;
 
     @ApiProperty({
         description: "Type of the relation",

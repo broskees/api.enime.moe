@@ -7,12 +7,13 @@ import {
     NotFoundException,
     Param
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import Source from '../entity/source.entity';
 import { NoCache } from '../decorator/no-cache.decorator';
 import SourceService from '../source/source.service';
 
 @Controller("/source")
+@ApiTags("source")
 export default class SourceController {
     constructor(private readonly sourceService: SourceService) {
     }

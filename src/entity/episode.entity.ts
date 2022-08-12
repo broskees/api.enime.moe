@@ -11,9 +11,9 @@ export default class Episode {
 
     @ApiProperty({
         description: "Anime that has this episode",
-        type: Anime
+        type: Object
     })
-    anime: Anime;
+    anime: object;
 
     @ApiProperty({
         description: "Episode number",
@@ -34,9 +34,9 @@ export default class Episode {
     image: string | null;
 
     @ApiProperty({
-        description: "Episode sources",
-        type: Source,
+        description: "Episode source IDs",
+        type: String,
         isArray: true
     })
-    sources: Source[];
+    sources: string[];
 }

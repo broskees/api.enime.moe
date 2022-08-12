@@ -5,6 +5,7 @@ import { range } from '../../helper/tool';
 import { decode, encode } from 'ascii-url-encoder';
 import { deepMatch } from '../../helper/match';
 import fetch from 'node-fetch';
+import axios from 'axios';
 
 export default class NineAnimeScraper extends Scraper {
     override enabled = false;
@@ -12,9 +13,53 @@ export default class NineAnimeScraper extends Scraper {
 
     private readonly table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     private readonly key = "kMXzgyNzT3k5dYab";
+    private cipherKey = "";
+    private decipherKey = "";
 
-    fetch(path: string, number: number, endNumber: number | undefined): Episode | Promise<Episode> | Promise<Episode[]> | Episode[] {
-        return undefined;
+    async init() {
+        const {
+            data: { cipher, decipher },
+        } = await axios.get("https://raw.githubusercontent.com/chenkaslowankiya/BruvFlow/main/keys.json");
+        this.cipherKey = cipher;
+        this.decipherKey = decipher;
+    }
+
+    async fetch(path: string, number: number, endNumber: number | undefined): Promise<Episode[]> {
+        if (!path.startsWith(this.url().replace('.to', '.id')))
+            path = `${path.replace('.to', '.id')}/watch/${path}`;
+
+        try {
+            const res = await axios.get(path);
+
+            const $ = load(res.data);
+
+            const id = $('#watch-main').attr('data-id')!;
+
+            const {
+                data: { result },
+            } = await axios.get(
+                `${this.url().replace('.to', '.id')}/ajax/episode/list/${id}?vrf=${encode(this.ev(id))}`
+            );
+
+            const $$ = load(result);
+
+            const episodes = [];
+            $$('div.episodes > ul > li > a').each((i, el) => {
+                    const possibleIds = $$(el).attr('data-ids')?.split(',')!;
+                    const id = possibleIds[0] ?? possibleIds[0];
+                    const number = parseInt($$(el).attr('data-num')?.toString()!);
+                    const title = $$(el).find('span').text().length > 0 ? $$(el).find('span').text() : undefined;
+                    episodes.push({
+                        number: number,
+                        title: title,
+                        url: `${this.url().replace('.to', '.id')}/ajax/server/list/${id}?vrf=${this.ev(id)}`,
+                    });
+                })
+
+            return episodes;
+        } catch (err) {
+            throw new Error((err as Error).message);
+        }
     }
 
     async match(t): Promise<AnimeWebPage> {
@@ -69,11 +114,11 @@ export default class NineAnimeScraper extends Scraper {
 
 
     private ev(query: string): string {
-        return this.encrypt(this.cipher(encode(query), this.key), this.table).replace(/[=|$]/gm, '');
+        return this.encrypt(this.cipher(encode(query), this.cipherKey), this.table).replace(/[=|$]/gm, '');
     }
 
     private dv(query: string): string {
-        return decode(this.cipher(this.decrypt(query), this.key));
+        return decode(this.cipher(this.decrypt(query), this.decipherKey));
     }
 
     private cipher(query: string, key: string): string {
