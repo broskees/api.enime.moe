@@ -61,7 +61,7 @@ export default class InformationModule implements OnModuleInit {
             status: {
                 in: ["RELEASING", "FINISHED"]
             },
-            lastEpisodeUpdate: undefined
+            lastEpisodeUpdate: null
         })
     }
 
