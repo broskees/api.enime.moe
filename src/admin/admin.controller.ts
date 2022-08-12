@@ -8,6 +8,7 @@ import DatabaseService from '../database/database.service';
 import ScraperService from '../scraper/scraper.service';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { isNumeric } from '../helper/tool';
 
 @SkipThrottle()
 @Controller("/admin")
@@ -28,6 +29,10 @@ export default class AdminController {
     @Get("/anime/:id")
     @NoCache()
     async fetchAnime(@Param("id") animeId: number | string) {
+        if (isNumeric(animeId)) if (typeof animeId === "string") {
+            animeId = parseInt(animeId);
+        }
+
         await this.informationService.executeWorker("fetch-specific", animeId);
 
         return "Done";

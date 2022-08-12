@@ -54,6 +54,17 @@ export default class InformationModule implements OnModuleInit {
         })
     }
 
+    // Give a higher priority to anime that are either releasing or finished but there's no episode available
+    @Cron(CronExpression.EVERY_10_MINUTES)
+    async checkForUpdatedEpisodesForAnimeWithoutEpisodes() {
+        await this.updateOnCondition({
+            status: {
+                in: ["RELEASING", "FINISHED"]
+            },
+            lastEpisodeUpdate: undefined
+        })
+    }
+
     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
     async checkForUpdatedEpisodesForFinishedAnime() {
         await this.updateOnCondition({

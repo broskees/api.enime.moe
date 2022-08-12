@@ -12,7 +12,6 @@ import { sleep } from '../helper/tool';
 
 export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
     const app = await NestFactory.create(ScraperModule);
-    let scraperModule = app.get(ScraperModule);
     let scraperService = app.select(ScraperModule).get(ScraperService);
     let databaseService = app.select(ScraperModule).get(DatabaseService);
 
