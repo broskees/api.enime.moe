@@ -20,34 +20,33 @@ export default class RapidCloudService implements OnModuleInit {
 
     @Cron(CronExpression.EVERY_2_HOURS)
     async refreshServerId() {
-        if (this.websocket) {
-            const keys = await this.cacheManager.store.keys();
+        try {
+            if (this.websocket) {
+                const keys = await this.cacheManager.store.keys();
 
-            for (let key of keys) {
-                if (!key.startsWith("source-")) continue;
+                for (let key of keys) {
+                    if (!key.startsWith("source-")) continue;
 
-                let data = await this.cacheManager.get(key);
-                try {
-                    if (typeof data === "string") {
-                        let parsedSource: Source = JSON.parse(data);
-                        if (parsedSource.url.includes("betterstream")) await this.cacheManager.del(key);
+                    let data = await this.cacheManager.get(key);
+                    try {
+                        if (typeof data === "string") {
+                            let parsedSource: Source = JSON.parse(data);
+                            if (parsedSource.url.includes("betterstream")) await this.cacheManager.del(key);
+                        }
+                    } catch (e) {
+                        // Not json, pass
                     }
-                } catch (e) {
-                    // Not json, pass
                 }
+
+                this.websocket?.reconnect();
+                if (this.intervalId) clearInterval(this.intervalId);
             }
 
-            this.websocket.close();
-            if (this.intervalId) clearInterval(this.intervalId);
-        }
+            if (!this.websocket) this.websocket = new ReconnectingWebSocket("wss://ws1.rapid-cloud.co/socket.io/?EIO=4&transport=websocket", undefined, {
+                WebSocket: WS,
+                reconnectionDelayGrowFactor: 1.0 // Don't use grow factor
+            });
 
-
-        this.websocket = new ReconnectingWebSocket("wss://ws1.rapid-cloud.co/socket.io/?EIO=4&transport=websocket", [], {
-            WebSocket: WS,
-            reconnectionDelayGrowFactor: 1.0 // Don't use grow factor
-        });
-
-        try {
             this.websocket.addEventListener("open", () => {
                 this.websocket.send("40");
                 if (this.intervalId) clearInterval(this.intervalId);
@@ -69,7 +68,7 @@ export default class RapidCloudService implements OnModuleInit {
                 Logger.error("Websocket error");
             });
         } catch (e) {
-            Logger.error("Websocket error occurred");
+            Logger.error("Websocket error occurred", e);
         }
     }
 }

@@ -55,11 +55,11 @@ export default class InformationModule implements OnModuleInit {
     }
 
     // Give a higher priority to anime that are either releasing or finished but there's no episode available
-    @Cron(CronExpression.EVERY_10_MINUTES)
+    @Cron(CronExpression.EVERY_30_MINUTES)
     async checkForUpdatedEpisodesForAnimeWithoutEpisodes() {
         await this.updateOnCondition({
             status: {
-                in: ["RELEASING", "FINISHED"]
+                in: ["FINISHED"]
             },
             lastEpisodeUpdate: null
         })
@@ -98,8 +98,7 @@ export default class InformationModule implements OnModuleInit {
 
         for (let i = 0; i < animeList.length; i++) { // Due to large volume of anime in the database, it's better if we batch the anime to multiple jobs
             let anime = animeList[i];
-            if (count > 50 || i >= animeList.length) {
-                console.log(batch)
+            if (count > 50 || i >= animeList.length - 1) {
                 await this.queue.add( { // Episode number are unique values, we can safely assume "if the current episode progress count is not even equal to the amount of episodes we have in database, the anime entry should be outdated"
                     animeIds: batch,
                     infoOnly: false
@@ -204,10 +203,5 @@ export default class InformationModule implements OnModuleInit {
     }
 
     async onModuleInit() {
-        await this.updateOnCondition({
-            status: {
-                in: ["RELEASING"]
-            }
-        })
     }
 }

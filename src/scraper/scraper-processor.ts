@@ -8,7 +8,6 @@ import dayjs from 'dayjs';
 import DatabaseService from '../database/database.service';
 import ScraperService from './scraper.service';
 import fetch from 'node-fetch';
-import { sleep } from '../helper/tool';
 
 export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
     const app = await NestFactory.create(ScraperModule);
@@ -109,10 +108,10 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                     });
 
                     if (episodeWithSource && episodeWithSource.sources.some(source => source.websiteId === scraper.websiteMeta.id)) {
+                        excludedNumbers.push(i);
                         continue;
                     }
 
-                    excludedNumbers.push(i);
                     episodeToScrapeLower = Math.min(episodeToScrapeLower, i);
                     episodeToScraperHigher = Math.max(episodeToScraperHigher, i);
                 }
@@ -240,34 +239,31 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
             return r;
         }, {});
 
-        let res = await fetch(process.env.DISCORD_WEBHOOK_URL, {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                "content": `There ${updated.length === 1 ? "is an update" : "are multiple updates"} to the Enime database`,
-                "embeds": Object.keys(groupedUpdates).map(source => {
-                    const updates = groupedUpdates[source];
-
-                    return {
-                        "description": updates.map(update => {
+        for (let groupUpdateKey of Object.keys(groupedUpdates)) {
+            const groupUpdate = groupedUpdates[groupUpdateKey];
+            await fetch(process.env.DISCORD_WEBHOOK_URL, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    "content": `There ${groupUpdate.length <= 1 ? "is an update" : "are multiple updates"} to the Enime database`,
+                    "embeds": [{
+                        "description": groupUpdate.map(update => {
                             return `${update.anime} Episode ${update.episodeNumber} ${update.episodeTitle ? `- ${update.episodeTitle}` : ""} (Watch it [here](https://enime.moe/watch/${update.animeSlug}/${update.episodeNumber}) on Enime.moe)`
                         }).join("\n"),
                         "url": `https://api.enime.moe`,
                         "color": 15198183,
                         "author": {
-                            "name": `Provided by ${source || "Unknown"}`
+                            "name": `Provided by ${groupUpdateKey || "Unknown"}`
                         },
                         "footer": {
                             "text": "Enime Project"
                         },
                         "timestamp": new Date().toISOString(),
                         "fields": []
-                    }
-                }),
-            })
-        })
-
-        console.log(await res.json())
+                    }],
+                })
+            });
+        }
     }
 
     cb(null, "Done");
