@@ -69,26 +69,24 @@ export default class SearchController {
                 OR  anime.title->>'romaji'  ILIKE ${"%" + query + "%"}
             )
         `
+        const [count, results] = await this.databaseService.$transaction([
+            this.databaseService.$queryRaw`
+                SELECT COUNT(*) FROM anime
+                ${where}
+            `,
+            this.databaseService.$queryRaw`
+                SELECT * FROM anime
+                ${where}
+                ORDER BY
+                    anime.title->>'english' ILIKE ${"%" + query + "%"} OR NULL,
+                    anime.title->>'romaji'  ILIKE ${"%" + query + "%"} OR NULL
+                LIMIT    ${perPage}
+                OFFSET   ${skip}
+            `
+        ])
 
-        const count = await this.databaseService.$queryRaw`
-            SELECT COUNT(*) FROM anime
-            ${where}
-        `;
-
-        // @ts-ignore
-        const total = count.count;
-
-        const results: Anime[] = await this.databaseService.$queryRaw`
-            SELECT * FROM anime
-            ${where}
-            ORDER BY
-                anime.title->>'english' ILIKE ${"%" + query + "%"} OR NULL,
-                anime.title->>'romaji'  ILIKE ${"%" + query + "%"} OR NULL
-            LIMIT    ${perPage}
-            OFFSET   ${skip}
-        `;
-
-        const lastPage = Math.ceil(total / perPage)
+        const total: number = Number(count[0].count);
+        const lastPage = Math.ceil(Number(total) / perPage)
 
         for (let result of results) {
             const genreIds: string[] = ((await this.databaseService.$queryRaw`
@@ -105,7 +103,7 @@ export default class SearchController {
             meta: {
                 total: total,
                 lastPage,
-                currentPage: page,
+                currentPage: Number(page),
                 perPage,
                 prev: page > 1 ? page - 1 : null,
                 next: page < lastPage ? page + 1 : null,
