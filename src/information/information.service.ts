@@ -125,7 +125,7 @@ export default class InformationService implements OnModuleInit {
             try {
                 if (edge.node.type !== "ANIME" || !Prisma.RelationType[edge.relationType]) continue;
                 if (edge.node.id === anime.anilistId) continue; // ???? An anime is related to itself
-                const relatedAnimeId = await this.fetchAnimeByAnilistID(edge.node.id, true);
+                const relatedAnimeId = await this.fetchAnimeByAnilistID(edge.node.id);
 
                 relations.push({
                     type: edge.relationType,
@@ -352,7 +352,7 @@ export default class InformationService implements OnModuleInit {
 
             animeDbUpdateId = id;
 
-            await this.fetchRelations(id, anilistAnime);
+            if (!animeDb) await this.fetchRelations(id, anilistAnime);
         }
 
         return animeDbUpdateId || animeDb.id;
