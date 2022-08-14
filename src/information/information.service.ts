@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { GraphQLClient } from 'graphql-request';
 import utc from 'dayjs/plugin/utc';
 import dayjs from 'dayjs';
@@ -22,20 +22,12 @@ export default class InformationService implements OnModuleInit {
     private readonly seasons = ["WINTER", "SPRING", "SUMMER", "FALL"];
     private informationWorker;
 
-    constructor(private readonly databaseService: DatabaseService, private readonly proxyService: ProxyService, private readonly mappingService: MappingService, @InjectQueue("scrape") private readonly queue: Queue) {
+    constructor(@Inject("DATABASE") private readonly databaseService: DatabaseService, private readonly proxyService: ProxyService, private readonly mappingService: MappingService, @InjectQueue("scrape") private readonly queue: Queue) {
         this.client = new GraphQLClient(this.anilistBaseEndpoint, {
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
-            },
-            /*
-            fetch: async (url, init) => {
-                const { httpsAgent } = await this.proxyService.getProxyAgent();
-
-                return fetch(url, { agent: httpsAgent, ...init })
             }
-
-             */
         });
 
         if (!process.env.TESTING) dayjs.extend(utc);
@@ -56,7 +48,7 @@ export default class InformationService implements OnModuleInit {
 
     async initializeWorker() {
         if (!this.informationWorker) {
-            this.informationWorker = fork(path.resolve(__dirname, "./information-worker"));
+            this.informationWorker = fork(path.resolve(__dirname, "./information.worker"));
 
             this.informationWorker.on("message", async ({ event, data }) => {
                 if (event === "refetch") {

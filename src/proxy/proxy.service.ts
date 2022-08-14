@@ -2,7 +2,6 @@ import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common';
 import axios from 'axios';
 import { Cache } from 'cache-manager';
 import { SocksProxyAgent } from 'socks-proxy-agent';
-import { HttpsProxyAgent } from 'https-proxy-agent';
 import { HttpProxyAgent } from 'http-proxy-agent';
 
 @Injectable()

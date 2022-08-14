@@ -1,4 +1,4 @@
-import { BadRequestException, CacheTTL, Controller, Get, Param, Query } from '@nestjs/common';
+import { BadRequestException, CacheTTL, Controller, Get, Inject, Param, Query } from '@nestjs/common';
 import DatabaseService from '../database/database.service';
 import { Throttle } from '@nestjs/throttler';
 import { createPaginator } from 'prisma-pagination';
@@ -13,7 +13,7 @@ import Search from '../entity/search.entity';
 export default class SearchController {
     searchPaginator: PaginateFunction = undefined;
 
-    constructor(private readonly databaseService: DatabaseService) {
+    constructor(@Inject("DATABASE") private readonly databaseService: DatabaseService) {
         this.searchPaginator = createPaginator({ })
     }
 

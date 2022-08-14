@@ -1,5 +1,5 @@
 import { SkipThrottle } from '@nestjs/throttler';
-import { Body, Controller, Get, Param, ParseArrayPipe, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, ParseArrayPipe, Put, UseGuards } from '@nestjs/common';
 import { ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { AdminGuard } from './admin.guard';
 import InformationService from '../information/information.service';
@@ -15,7 +15,7 @@ import { isNumeric } from '../helper/tool';
 @ApiExcludeController()
 @UseGuards(AdminGuard)
 export default class AdminController {
-    constructor(private readonly informationService: InformationService, private readonly scraperService: ScraperService, private readonly databaseService: DatabaseService, @InjectQueue("scrape") private readonly queue: Queue) {
+    constructor(private readonly informationService: InformationService, private readonly scraperService: ScraperService, @Inject("DATABASE") private readonly databaseService: DatabaseService, @InjectQueue("scrape") private readonly queue: Queue) {
     }
 
     @Put("/anime/batch")

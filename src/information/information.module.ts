@@ -1,4 +1,4 @@
-import { Logger, Module, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Inject, Logger, Module, NotFoundException, OnModuleInit } from '@nestjs/common';
 import DatabaseService from '../database/database.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import ScraperService from '../scraper/scraper.service';
@@ -11,17 +11,15 @@ import { fork } from 'child_process';
 import InformationService from './information.service';
 import { Queue } from 'bull';
 import ProxyService from '../proxy/proxy.service';
-import DatabaseModule from '../database/database.module';
-import ScraperModule from '../scraper/scraper.module';
 import MappingModule from '../mapping/mapping.module';
-import slugify from 'slugify';
 import ProxyModule from '../proxy/proxy.module';
+import DatabaseModule from '../database/database.module';
 
 @Module({
     imports: [ProxyModule, BullModule.registerQueue({
         name: "scrape"
-    }), DatabaseModule, MappingModule],
-    providers: [InformationService, ProxyService, ScraperService],
+    }), MappingModule, DatabaseModule],
+    providers: [InformationService, ProxyService, ScraperService, DatabaseService],
     exports: [InformationService]
 })
 export default class InformationModule implements OnModuleInit {

@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import Scraper from './scraper';
 import { promises as fs } from 'fs';
 import * as path from 'path';
@@ -9,7 +9,7 @@ import DatabaseService from '../database/database.service';
 export default class ScraperService {
     private importedScrapers: Scraper[] = [];
 
-    constructor(private readonly proxyService: ProxyService, private readonly databaseService: DatabaseService) {
+    constructor(private readonly proxyService: ProxyService, @Inject("DATABASE") private readonly databaseService: DatabaseService) {
 
     }
 
@@ -24,6 +24,7 @@ export default class ScraperService {
 
             const scraper = new ScraperModule(this.proxyService);
 
+            await scraper.init();
             if (scraper.enabled) this.importedScrapers.push(scraper);
         }
 

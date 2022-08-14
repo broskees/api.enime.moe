@@ -1,4 +1,4 @@
-import { CacheModule, Module } from '@nestjs/common';
+import { CacheModule as NestCacheModule, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -22,7 +22,6 @@ import RecentController from './controller/recent.controller';
 import DatabaseModule from './database/database.module';
 import PopularController from './controller/popular.controller';
 import StatsController from './controller/stats.controller';
-import SourceController from './controller/source.controller';
 import SourceService from './source/source.service';
 import EpisodeService from './episode/episode.service';
 import AdminModule from './admin/admin.module';
@@ -30,19 +29,14 @@ import ViewController from './controller/view.controller';
 import SearchModule from './search/search.module';
 import MappingModule from './mapping/mapping.module';
 import ToolModule from './tool/tool.module';
-import * as redisStore from 'cache-manager-redis-store';
 import ProxyModule from './proxy/proxy.module';
+import SourceModule from './source/source.module';
+import CacheModule from './cache/cache.module';
 
 @Module({
-  imports: [ProxyModule, ConfigModule.forRoot({
+  imports: [ConfigModule.forRoot({
     isGlobal: true
-  }), CacheModule.register({
-      store: redisStore,
-      host: process.env.REDIS_HOST,
-      port: Number(process.env.REDIS_PORT),
-      password: process.env.REDIS_PASSWORD,
-      isGlobal: true
-  }), ScheduleModule.forRoot(), DatabaseModule, ToolModule, SearchModule, ScraperModule, InformationModule, AdminModule, HealthModule,
+  }), DatabaseModule, CacheModule, ScheduleModule.forRoot(), ProxyModule, ToolModule, SearchModule, ScraperModule, SourceModule, InformationModule, AdminModule, HealthModule,
       MappingModule,
       BullModule.forRoot({
         redis: {
@@ -61,7 +55,7 @@ import ProxyModule from './proxy/proxy.module';
           }),
       })
   ],
-  controllers: [AppController, ViewController, AnimeController, SourceController, StatsController, ProxyController, RecentController, EpisodeController, PopularController],
+  controllers: [AppController, ViewController, AnimeController, StatsController, ProxyController, RecentController, EpisodeController, PopularController],
   providers: [AppService, DatabaseService, ProxyService, ScraperService, EpisodeService, SourceService,
       {
           provide: APP_GUARD,
@@ -71,7 +65,6 @@ import ProxyModule from './proxy/proxy.module';
           provide: APP_INTERCEPTOR,
           useClass: EnimeCacheInterceptor,
       }
-  ],
-    exports: [DatabaseService]
+  ]
 })
 export class AppModule {}

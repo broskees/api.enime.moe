@@ -23,7 +23,7 @@ export default abstract class Scraper {
             retryCondition: (_error) => true,
             retryDelay: () => 500,
             onRetry: async (number, __, requestConfig) => {
-                if (number < 9) {
+                if (number<9) {
                     const { http, agent } = await this.proxyService.getProxyAgent();
 
                     if (http) requestConfig.httpAgent = agent;
@@ -34,6 +34,10 @@ export default abstract class Scraper {
                 }
             }
         });
+    }
+
+    async init(): Promise<void> {
+
     }
 
     abstract name(): string;

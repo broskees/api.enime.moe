@@ -6,22 +6,35 @@ import {
     Logger,
     NotFoundException
 } from '@nestjs/common';
-import { Cache } from 'cache-manager';
 import DatabaseService from '../database/database.service';
 import ScraperService from '../scraper/scraper.service';
 import Source from '../entity/source.entity';
 import RapidCloudService from '../tool/rapid-cloud/rapid-cloud.service';
+import axios from 'axios';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export default class SourceService {
-    constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache, private readonly databaseService: DatabaseService, private readonly scraperService: ScraperService, private readonly rapidCloudService: RapidCloudService) {
+    constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache, @Inject("DATABASE") private readonly databaseService: DatabaseService, private readonly scraperService: ScraperService, private readonly rapidCloudService: RapidCloudService) {
     }
 
     async getSource(id): Promise<Source> {
         const cacheKey = `source-${id}`;
 
         let cachedSource = await this.cacheManager.get(cacheKey);
-        if (cachedSource) return JSON.parse(<string>cachedSource);
+        if (cachedSource) {
+            let cachedSourceValue = JSON.parse(<string>cachedSource);
+
+            try {
+                const response = await axios.get(cachedSourceValue.url, {
+                    timeout: 1000
+                });
+                if (response.status === 200) return cachedSourceValue;
+                else await this.cacheManager.del(cacheKey);
+            } catch (e) {
+                await this.cacheManager.del(cacheKey);
+            }
+        }
 
         const source = await this.databaseService.source.findUnique({
             where: {
@@ -75,7 +88,7 @@ export default class SourceService {
             website: source.website.url
         };
 
-        await this.cacheManager.set(cacheKey, JSON.stringify(sourceObject), { ttl: 60 * 60 * 4 }); // 4 hour cache (actual expiry time is ~6 hours but just in case)
+        await this.cacheManager.set(cacheKey, JSON.stringify(sourceObject), { ttl: 60 * 60 * 5 }); // 4 hour cache (actual expiry time is ~6 hours but just in case)
 
         return sourceObject;
     }

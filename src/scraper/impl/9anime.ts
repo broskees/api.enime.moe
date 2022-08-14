@@ -24,6 +24,16 @@ export default class NineAnimeScraper extends Scraper {
         this.decipherKey = decipher;
     }
 
+    async getRawSource(sourceUrl, config) {
+        if (!(sourceUrl instanceof URL)) sourceUrl = new URL(sourceUrl);
+
+        const episodeId = sourceUrl.pathname.slice(sourceUrl.pathname.indexOf("/ajax/server/list/"));
+        const url = `${sourceUrl}?vrf=${this.ev(episodeId)}`;
+
+        console.log(url)
+        return undefined;
+    }
+
     async fetch(path: string, number: number, endNumber: number | undefined): Promise<Episode[]> {
         if (!path.startsWith(this.url().replace('.to', '.id')))
             path = `${path.replace('.to', '.id')}/watch/${path}`;
@@ -52,7 +62,7 @@ export default class NineAnimeScraper extends Scraper {
                     episodes.push({
                         number: number,
                         title: title,
-                        url: `${this.url().replace('.to', '.id')}/ajax/server/list/${id}?vrf=${this.ev(id)}`,
+                        url: `${this.url().replace('.to', '.id')}/ajax/server/list/${id}`,
                     });
                 })
 
@@ -63,13 +73,14 @@ export default class NineAnimeScraper extends Scraper {
     }
 
     async match(t): Promise<AnimeWebPage> {
-        const response = await (await fetch(`${this.url().replace('.to', '.id')}/filter?keyword=${encode(t.current).replace(
-            /%20/g,
-            '+'
-        )}&vrf=${encode(this.ev(t.current))}`)).text();
-
-
-        const $ = load(response);
+        const res = await axios.get(
+            `${this.url().replace('.to', '.id')}/filter?keyword=${encode(t.current).replace(
+                /%20/g,
+                '+'
+            )}&vrf=${encode(this.ev(t.current))}&page=1`
+        );
+        console.log(res.data)
+        const $ = load(res.data);
         const results = [];
 
         $('#list-items > div.item').each((i, el) => {
@@ -81,6 +92,8 @@ export default class NineAnimeScraper extends Scraper {
                 // type: $(el).find('div > div.ani > a > div.meta > div > div.right').text()!,
             });
         });
+
+        console.log(results)
         if (!results.length) return undefined;
 
         // Attempt 1 - Match the first 9anime search element

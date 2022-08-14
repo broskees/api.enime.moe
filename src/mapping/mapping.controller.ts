@@ -1,4 +1,4 @@
-import { CacheTTL, Controller, Get, NotFoundException, Param } from '@nestjs/common';
+import { CacheTTL, Controller, Get, Inject, NotFoundException, Param } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import Anime from '../entity/anime.entity';
 import { SkipThrottle } from '@nestjs/throttler';
@@ -9,7 +9,7 @@ import { isNumeric } from '../helper/tool';
 @Controller("/mapping")
 @ApiTags("mapping")
 export default class MappingController {
-    constructor(private readonly databaseService: DatabaseService) {
+    constructor(@Inject("DATABASE") private readonly databaseService: DatabaseService) {
     }
 
     @Get(":provider/:id")

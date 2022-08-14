@@ -1,6 +1,5 @@
 import { Logger, Module, OnModuleInit } from '@nestjs/common';
 import ProxyService from '../proxy/proxy.service';
-import DatabaseService from '../database/database.service';
 import { BullModule, Process, Processor } from '@nestjs/bull';
 import ScraperService from './scraper.service';
 import InformationModule from '../information/information.module';
@@ -11,14 +10,13 @@ import Scraper from './scraper';
 import { transform } from '../helper/romaji';
 import * as path from 'path';
 import * as fs from 'fs';
-import DatabaseModule from '../database/database.module';
 import ProxyModule from '../proxy/proxy.module';
 
 @Module({
     imports: [ProxyModule, BullModule.registerQueue({
         name: "scrape",
-        processors: [fs.existsSync(path.join(__dirname, "scraper-processor.js")) ? path.join(__dirname, "scraper-processor.js") : path.join(__dirname, "scraper-processor.ts")]
-    }), DatabaseModule, InformationModule],
+        processors: [fs.existsSync(path.join(__dirname, "scraper.processor.js")) ? path.join(__dirname, "scraper.processor.js") : path.join(__dirname, "scraper.processor.ts")]
+    }), InformationModule],
     providers: [ScraperService, ProxyService],
     exports: [ScraperService]
 })
@@ -38,10 +36,8 @@ export default class ScraperModule implements OnModuleInit {
 
         let original = title.original, special = title.special;
         if (original) title.current = title.english || title.romaji;
-        Logger.debug("A", scraper.name());
 
         let matchedEntry = await scraper.match(title);
-        Logger.debug("B", matchedEntry);
 
         if (!matchedEntry) {
             if (title.tries >= 50) throw new Error(`Anime matching for title ${title} resulted into a potential infinite loop, skipping this match to preserve the scraper functionality`);

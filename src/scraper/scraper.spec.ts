@@ -23,7 +23,8 @@ describe("Scraper Test", function () {
         console.log("Reached 1")
         // const scraper = new GogoanimeScraper(application.get(ProxyService));
         // const scraper = new Zoro();
-        const scraper = new NineAnimeScraper();
+        const scraper = new NineAnimeScraper(application.get(ProxyService));
+        await scraper.init();
 
         const anime = await application.get(ScraperModule).matchAnime( {
             "native": "まちカドまぞく 2丁目",

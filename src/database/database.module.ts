@@ -1,12 +1,17 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import DatabaseService from './database.service';
 
+@Global()
 @Module({
-    providers: [DatabaseService],
-    exports: [DatabaseService]
+    providers: [{
+        provide: "DATABASE",
+        useClass: DatabaseService
+    }],
+    exports: [
+        "DATABASE"
+    ]
 })
 export default class DatabaseModule {
-    constructor(public readonly databaseService: DatabaseService) {
-        this.databaseService = databaseService;
+    constructor() {
     }
 }
