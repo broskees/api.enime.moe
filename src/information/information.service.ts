@@ -352,7 +352,7 @@ export default class InformationService implements OnModuleInit {
 
             animeDbUpdateId = id;
 
-            // await this.fetchRelations(id, anilistAnime);
+            await this.fetchRelations(id, anilistAnime);
         }
 
         return animeDbUpdateId || animeDb.id;
