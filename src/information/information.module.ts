@@ -1,4 +1,4 @@
-import { Inject, Logger, Module, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Inject, Logger, Module, NotFoundException, OnApplicationBootstrap, OnModuleInit } from '@nestjs/common';
 import DatabaseService from '../database/database.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import ScraperService from '../scraper/scraper.service';
@@ -14,6 +14,8 @@ import ProxyService from '../proxy/proxy.service';
 import MappingModule from '../mapping/mapping.module';
 import ProxyModule from '../proxy/proxy.module';
 import DatabaseModule from '../database/database.module';
+import slugify from 'slugify';
+import { sleep } from '../helper/tool';
 
 @Module({
     imports: [ProxyModule, BullModule.registerQueue({
@@ -22,7 +24,7 @@ import DatabaseModule from '../database/database.module';
     providers: [InformationService, ProxyService, ScraperService, DatabaseService],
     exports: [InformationService]
 })
-export default class InformationModule implements OnModuleInit {
+export default class InformationModule implements OnApplicationBootstrap {
     constructor(@InjectQueue("scrape") private readonly queue: Queue, private readonly databaseService: DatabaseService, private readonly informationService: InformationService, private readonly scraperService: ScraperService) {
         if (!process.env.TESTING) dayjs.extend(utc);
     }
@@ -200,6 +202,6 @@ export default class InformationModule implements OnModuleInit {
         });
     }
 
-    async onModuleInit() {
+    async onApplicationBootstrap() {
     }
 }

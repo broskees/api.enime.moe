@@ -59,7 +59,7 @@ export default class GogoanimeScraper extends Scraper {
 
         $("#episode_related > li").each((i, el) => {
             const number = parseInt($(el).find(`div.name`).text().replace("EP ", ""));
-            if (excludedNumbers.includes(number)) return;
+            if (number % 1 !== 0 || excludedNumbers.includes(number)) return; // Don't scrape already scraped episodes and filler episodes (ep .x)
 
             episodesSource.push({
                 number: number,

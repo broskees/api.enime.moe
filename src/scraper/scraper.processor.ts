@@ -64,13 +64,17 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                 const title = anime.title;
                 title["synonyms"] = anime.synonyms;
 
-
                 let matchedAnimeEntry;
 
                 if (malSyncData) {
                     const scraperKey = Object.keys(malSyncData).find(key => key.toLowerCase() === scraper.name().toLowerCase());
                     if (scraperKey && malSyncData[scraperKey]) {
-                        const entryKey = Object.keys(malSyncData[scraperKey]).find(key => !key.includes("dub") && !key.includes("uncensored"));
+                        const keys = Object.keys(malSyncData[scraperKey]);
+                        let entryKey = keys.find(key => !key.includes("dub") && !key.includes("uncensored"));
+                        if (anime.format === "TV") { // Sometimes MalSync trolls and put movie adaption in piracy site mappings (e.g. Fate UBW), we better handle this part
+                            let tvKey = keys.find(key => !key.includes("dub") && !key.includes("uncensored") && key.includes("tv"));
+                            if (tvKey) entryKey = tvKey;
+                        }
 
                         if (entryKey) {
                             let malSyncEntry = malSyncData[scraperKey][entryKey];
@@ -90,7 +94,7 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
 
                 const excludedNumbers = [];
 
-                for (let i = 1; i <= anime.currentEpisode; i++) {
+                for (let i = 0; i <= anime.currentEpisode; i++) {
                     const episodeWithSource = await databaseService.episode.findFirst({
                         where: {
                             AND: [

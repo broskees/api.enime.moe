@@ -104,6 +104,8 @@ export default class InformationService implements OnModuleInit {
             }
         });
 
+        if (!anime) return;
+
         const requestVariables = {
             id: anime.anilistId
         };
@@ -277,7 +279,7 @@ export default class InformationService implements OnModuleInit {
             }
         }
 
-        slugify.extend({"×": "x"})
+        slugify.extend({"×": "x", "/": "-"})
 
         return {
             title: anilistAnime.title,
@@ -294,6 +296,7 @@ export default class InformationService implements OnModuleInit {
             season: anilistAnime.season || "UNKNOWN",
             seasonInt: anilistAnime.seasonInt,
             year: anilistAnime.seasonYear,
+            format: anilistAnime.format || "UNKNOWN",
             next: nextEpisode,
             mappings: mappingObject,
             genre: {
@@ -309,7 +312,7 @@ export default class InformationService implements OnModuleInit {
         };
     }
 
-    async fetchAnimeByAnilistID(anilistId, full = false) {
+    async fetchAnimeByAnilistID(anilistId, force = false) {
         let animeDbUpdateId = undefined;
 
         const requestVariables = {
@@ -323,7 +326,7 @@ export default class InformationService implements OnModuleInit {
             }
         });
 
-        if (!animeDb) {
+        if (!animeDb || force) {
             let animeList = await this.client.request(SPECIFIC_ANIME, requestVariables);
 
             const anilistAnime = animeList?.Page?.media[0];
@@ -332,21 +335,27 @@ export default class InformationService implements OnModuleInit {
 
             const animeDbObject = await this.convertToDbAnime(anilistAnime);
 
-            let id = cuid();
+            let id = animeDb ? animeDb.id : cuid();
 
-            await this.databaseService.anime.create({
-                data: {
+            await this.databaseService.anime.upsert({
+                where: {
+                    anilistId: animeDbObject.anilistId
+                },
+                create: {
                     id: id,
+                    ...animeDbObject
+                },
+                update: {
                     ...animeDbObject
                 }
             });
 
             animeDbUpdateId = id;
 
-            await this.fetchRelations(id, anilistAnime);
+            // await this.fetchRelations(id, anilistAnime);
         }
 
-        return full ? animeDbUpdateId || animeDb.id : animeDbUpdateId;
+        return animeDbUpdateId || animeDb.id;
     }
 
     async refetchAnime(): Promise<object> {

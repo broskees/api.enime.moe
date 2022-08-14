@@ -40,6 +40,13 @@ export default class Anime {
     status: "FINISHED" | "RELEASING" | "NOT_YET_RELEASED" | "CANCELLED" | "HIATUS";
 
     @ApiProperty({
+        description: "Anime format",
+        example: "TV"
+    })
+    format: "UNKNOWN" | "TV" | "TV_SHORT" | "MOVIE" | "SPECIAL" | "OVA" | "ONA" | "MUSIC";
+
+
+    @ApiProperty({
         description: "Anime season",
         example: "SUMMER"
     })

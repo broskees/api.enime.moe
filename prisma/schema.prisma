@@ -48,6 +48,7 @@ model Anime {
   popularity        Int?
   color             String?
   year              Int?
+  format            MediaFormat?  @default(UNKNOWN)
   relations         Relation[]    @relation("relations")
   linkedRelations   Relation[]    @relation("linkedRelations")
 
@@ -148,4 +149,15 @@ enum AiringSeason {
 enum SourceType {
   DIRECT
   PROXY
+}
+
+enum MediaFormat {
+  UNKNOWN
+  TV
+  TV_SHORT
+  MOVIE
+  SPECIAL
+  OVA
+  ONA
+  MUSIC
 }
