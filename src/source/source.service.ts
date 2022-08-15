@@ -27,7 +27,8 @@ export default class SourceService {
 
             try {
                 const response = await axios.get(cachedSourceValue.url, {
-                    timeout: 1000
+                    timeout: 1000,
+                    validateStatus: () => true
                 });
                 if (response.status === 200) return cachedSourceValue;
                 else await this.cacheManager.del(cacheKey);

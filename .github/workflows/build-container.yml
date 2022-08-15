@@ -1,9 +1,9 @@
-on: 
+name: Build Container
+on:
   push:
   workflow_dispatch:
 jobs:
   build-container:
-    name: Build Container
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -18,13 +18,3 @@ jobs:
         run: docker build -t enime/api:1.0 .
       - name: Docker Push
         run: docker push enime/api:1.0
-  redeploy_container:
-    name: Redeploy Container
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger deploy webhook
-        env:
-          URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
-          KEY: ${{ secrets.DEPLOY_WEBHOOK_KEY }}
-        run: |
-          curl -X POST -H "x-api-key: $KEY" $URL

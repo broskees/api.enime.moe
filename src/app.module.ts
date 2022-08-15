@@ -10,7 +10,6 @@ import InformationModule from './information/information.module';
 import HealthModule from './health/health.module';
 import { BullModule } from '@nestjs/bull';
 import AnimeController from './controller/anime.controller';
-import ProxyController from './controller/proxy.controller';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -55,7 +54,7 @@ import CacheModule from './cache/cache.module';
           }),
       })
   ],
-  controllers: [AppController, ViewController, AnimeController, StatsController, ProxyController, RecentController, EpisodeController, PopularController],
+  controllers: [AppController, ViewController, AnimeController, StatsController, RecentController, EpisodeController, PopularController],
   providers: [AppService, DatabaseService, ProxyService, ScraperService, EpisodeService, SourceService,
       {
           provide: APP_GUARD,

@@ -82,7 +82,6 @@ export default class RecentController {
             const sources = episode.sources.map(source => {
                 return {
                     id: source.id,
-                    url: `https://api.enime.moe/proxy/source/${source.id}`,
                     website: source.website.name,
                     priority: source.website.priority,
                     subtitle: source.website.subtitle
