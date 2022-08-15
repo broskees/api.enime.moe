@@ -10,7 +10,7 @@ import DatabaseService from '../database/database.service';
 import ScraperService from '../scraper/scraper.service';
 import Source from '../entity/source.entity';
 import RapidCloudService from '../tool/rapid-cloud/rapid-cloud.service';
-import axios from 'axios';
+import axios from '../helper/request';
 import { Cache } from 'cache-manager';
 
 @Injectable()

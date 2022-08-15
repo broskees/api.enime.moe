@@ -56,6 +56,8 @@ export default class RapidCloudService implements OnModuleInit {
         try {
             if (this.intervalId) clearInterval(this.intervalId);
 
+            if (this.websocket) this.websocket.reconnect(); // Reconnect every 2 hours to manually refresh the server ID
+
             if (!this.websocket) this.websocket = new ReconnectingWebSocket(async () => {
                 await this.clearCachedUrls();
                 return this.host;

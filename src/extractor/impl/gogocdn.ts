@@ -1,7 +1,7 @@
 import * as CryptoJS from 'crypto-js';
 import VideoExtractor from '../extractor';
 import { IVideo } from '../types';
-import fetch from 'node-fetch';
+import axios from '../../helper/request';
 
 class GogoCDN extends VideoExtractor {
     protected override serverName = "goload";
@@ -18,23 +18,26 @@ class GogoCDN extends VideoExtractor {
     override extract = async (videoUrl: URL): Promise<IVideo> => {
         this.referer = videoUrl.href;
 
-        const res = await fetch(videoUrl.href);
+        const res = await axios.get(videoUrl.href, {
+            timeout: 5000
+        }); // We set timeout here and there so it'll eventually fall back to consumet if both our origin and backup proxy are "banned" (although this likely won't happen because Cloudflare is distributive)
 
         const encyptedParams = await this.generateEncryptedAjaxParams(
-            await res.text(),
+            res.data,
             videoUrl.searchParams.get("id") ?? ""
         );
 
-        const encryptedData = await fetch(
+        const encryptedData = await axios.get(
             `${videoUrl.protocol}//${videoUrl.hostname}/encrypt-ajax.php?${encyptedParams}`,
             {
                 headers: {
                     "X-Requested-With": "XMLHttpRequest",
                 },
+                timeout: 5000
             }
         );
 
-        const decryptedData = await this.decryptAjaxData((await encryptedData.json()).data);
+        const decryptedData = await this.decryptAjaxData(encryptedData.data.data);
         if (!decryptedData.source?.length && !decryptedData.source_bk?.length) throw new Error("No source found. Try a different server.");
 
         decryptedData.source.forEach((source: any) => {

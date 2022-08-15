@@ -20,6 +20,7 @@ export class HealthController {
             () => this.http.pingCheck("api-server", "https://api.enime.moe"),
             () => this.prisma.isHealthy("database"),
             () => this.http.pingCheck("tool-rapid-cloud", "https://api.enime.moe/tool/rapid-cloud/server-id"),
+            () => this.http.pingCheck("proxy-gogoanime", "https://gogoanime.lu", { timeout: 5000 }),
             () => this.memory.checkHeap("memory", 150 * 1024 * 1024)
         ]);
     }

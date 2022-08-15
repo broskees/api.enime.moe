@@ -1,11 +1,8 @@
-import axios, { AxiosRequestConfig } from 'axios';
+import { AxiosRequestConfig } from 'axios';
 import { Episode, AnimeWebPage, WebsiteMeta, RawSource } from '../types/global';
 export const USER_AGENT =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36';
-
-import axiosRetry from '@enime-project/axios-retry';
-import ProxyService from '../proxy/proxy.service';
-
+import axios from '../helper/request';
 
 export default abstract class Scraper {
     public infoOnly = false;
@@ -15,26 +12,6 @@ export default abstract class Scraper {
     public priority = -1;
 
     public websiteMeta: WebsiteMeta = undefined;
-
-    constructor(private readonly proxyService: ProxyService) {
-        axiosRetry(axios, {
-            retries: 10,
-            shouldResetTimeout: true,
-            retryCondition: (_error) => true,
-            retryDelay: () => 500,
-            onRetry: async (number, __, requestConfig) => {
-                if (number<9) {
-                    const { http, agent } = await this.proxyService.getProxyAgent();
-
-                    if (http) requestConfig.httpAgent = agent;
-                    else requestConfig.httpsAgent = agent;
-                } else {
-                    delete requestConfig["httpAgent"];
-                    delete requestConfig["httpsAgent"];
-                }
-            }
-        });
-    }
 
     async init(): Promise<void> {
 

@@ -64,7 +64,8 @@ export default class SearchController {
             WHERE
             ${all ? Prisma.empty : Prisma.sql`(anime.status != 'NOT_YET_RELEASED') AND ("lastEpisodeUpdate" is not null) AND`}
             (
-                ${"%" + query + "%"} % ANY(synonyms)
+                ${"%" + query + "%"}        ILIKE ANY(synonyms)
+                OR  ${"%" + query + "%"}    % ANY(synonyms)
                 OR  anime.title->>'english' ILIKE ${"%" + query + "%"}
                 OR  anime.title->>'romaji'  ILIKE ${"%" + query + "%"}
             )
@@ -79,7 +80,8 @@ export default class SearchController {
                 ${where}
                 ORDER BY
                     anime.title->>'english' ILIKE ${"%" + query + "%"} OR NULL,
-                    anime.title->>'romaji'  ILIKE ${"%" + query + "%"} OR NULL
+                    anime.title->>'romaji'  ILIKE ${"%" + query + "%"} OR NULL,
+                    ${"%" + query + "%"}    ILIKE ANY(synonyms)        OR NULL
                 LIMIT    ${perPage}
                 OFFSET   ${skip}
             `

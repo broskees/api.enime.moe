@@ -38,7 +38,7 @@ export default class ProxyService {
 
             proxyList = [...proxyListHttp, ...proxyListSocks4, ...proxyListSocks5];
             await this.cacheManager.set("proxies", JSON.stringify(proxyList), {
-                ttl: 1000 * 60 * 15
+                ttl: 60 * 15
             });
         }
 
