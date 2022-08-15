@@ -16,5 +16,9 @@ jobs:
         run: docker build -t enime/api:1.0 .
       - name: Docker Push
         run: docker push enime/api:1.0
+  redeploy_container:
+    name: Redeploy Container
+    runs-on: ubuntu-latest
+    steps:
       - name: Trigger deploy webhook
-        run: curl -X POST ${{ secrets.DEPLOY_WEBHOOK }}
+        run: curl -X POST -H 'x-api-key: ${{ secrets.DEPLOY_WEBHOOK_KEY }}' ${{ secrets.DEPLOY_WEBHOOK_URL }}
