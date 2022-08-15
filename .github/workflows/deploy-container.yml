@@ -7,7 +7,8 @@ on:
       - completed
 jobs:
   redeploy_container:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: |
+      ${{ github.event.workflow_run.conclusion == '' || github.event.workflow_run.conclusion == 'success' }}
     name: Redeploy Container
     runs-on: ubuntu-latest
     steps:
