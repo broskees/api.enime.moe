@@ -133,16 +133,12 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                     for (let scrapedEpisode of scrapedEpisodes) {
                         if (scrapedEpisode.number > anime.currentEpisode) continue; // Piracy sites tend to troll sometimes and publish wrong episodes (e.g. ep6 but it's actually ep5 and ep6 isn't even out yet)
 
-                        let episodeDb = await databaseService.episode.findFirst({
+                        let episodeDb = await databaseService.episode.findUnique({
                             where: {
-                                AND: [
-                                    {
-                                        animeId: anime.id
-                                    },
-                                    {
-                                        number: scrapedEpisode.number
-                                    }
-                                ]
+                                animeId_number: {
+                                    animeId: anime.id,
+                                    number: scrapedEpisode.number
+                                }
                             }
                         });
 
