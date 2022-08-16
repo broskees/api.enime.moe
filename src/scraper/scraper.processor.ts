@@ -92,19 +92,15 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
 
                 let episodeToScrapeLower = Number.MAX_SAFE_INTEGER, episodeToScraperHigher = Number.MIN_SAFE_INTEGER;
 
-                const excludedNumbers = [];
+                let excludedNumbers = [];
 
                 for (let i = 0; i <= anime.currentEpisode; i++) {
-                    const episodeWithSource = await databaseService.episode.findFirst({
+                    const episodeWithSource = await databaseService.episode.findUnique({
                         where: {
-                            AND: [
-                                {
-                                    animeId: anime.id,
-                                },
-                                {
-                                    number: i
-                                }
-                            ]
+                            animeId_number: {
+                                animeId: anime.id,
+                                number: i
+                            }
                         },
                         include: {
                             sources: true
@@ -123,6 +119,8 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                 if (episodeToScraperHigher === Number.MIN_SAFE_INTEGER || episodeToScrapeLower === Number.MAX_SAFE_INTEGER) continue;
 
                 try {
+                    if (infoOnly && scraper.infoOnly) excludedNumbers = []; // If we're only updating titles, no need to exclude episodes from scraping since sometimes sites update titles slower than the sources
+
                     let scrapedEpisodes = scraper.fetch(matchedAnimeEntry.path, episodeToScrapeLower, episodeToScraperHigher, excludedNumbers);
                     if (scrapedEpisodes instanceof Promise) scrapedEpisodes = await scrapedEpisodes;
 
@@ -133,6 +131,8 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                     if (scrapedEpisodes.length > anime.currentEpisode) continue; // STOP! This anime source site uses a different episode numbering strategy that it will potentially break the database. Don't bother use this anime's information from this site
 
                     for (let scrapedEpisode of scrapedEpisodes) {
+                        if (scrapedEpisode.number > anime.currentEpisode) continue; // Piracy sites tend to troll sometimes and publish wrong episodes (e.g. ep6 but it's actually ep5 and ep6 isn't even out yet)
+
                         let episodeDb = await databaseService.episode.findFirst({
                             where: {
                                 AND: [

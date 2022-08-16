@@ -81,6 +81,7 @@ model Episode {
   updatedAt  DateTime @updatedAt
 
   @@map("episode")
+  @@unique([animeId, number])
 }
 
 model Source {
