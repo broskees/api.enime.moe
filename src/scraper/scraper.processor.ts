@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import DatabaseService from '../database/database.service';
 import ScraperService from './scraper.service';
 import fetch from 'node-fetch';
+import { isNumeric } from '../helper/tool';
 
 export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
     const app = await NestFactory.create(ScraperModule);
@@ -131,6 +132,8 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                     if (scrapedEpisodes.length > anime.currentEpisode) continue; // STOP! This anime source site uses a different episode numbering strategy that it will potentially break the database. Don't bother use this anime's information from this site
 
                     for (let scrapedEpisode of scrapedEpisodes) {
+                        if (Number.isNaN(scrapedEpisode.number) || scrapedEpisode.number % 1 !== 0) continue; // Do not scrape #"NaN" episodes or ".5" episodes
+
                         if (scrapedEpisode.number > anime.currentEpisode) continue; // Piracy sites tend to troll sometimes and publish wrong episodes (e.g. ep6 but it's actually ep5 and ep6 isn't even out yet)
 
                         let episodeDb = await databaseService.episode.findUnique({
