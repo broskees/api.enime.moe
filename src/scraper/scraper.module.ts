@@ -11,9 +11,10 @@ import { transform } from '../helper/romaji';
 import * as path from 'path';
 import * as fs from 'fs';
 import ProxyModule from '../proxy/proxy.module';
+import MappingModule from '../mapping/mapping.module';
 
 @Module({
-    imports: [ProxyModule, BullModule.registerQueue({
+    imports: [ProxyModule, MappingModule, BullModule.registerQueue({
         name: "scrape",
         processors: [fs.existsSync(path.join(__dirname, "scraper.processor.js")) ? path.join(__dirname, "scraper.processor.js") : path.join(__dirname, "scraper.processor.ts")]
     }), InformationModule],

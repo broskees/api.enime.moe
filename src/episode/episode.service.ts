@@ -48,6 +48,10 @@ export default class EpisodeService {
                 id: true,
                 number: true,
                 title: true,
+                titleVariations: true,
+                description: true,
+                image: true,
+                airedAt: true,
                 anime: {
                     select: {
                         id: true,

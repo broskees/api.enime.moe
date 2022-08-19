@@ -44,7 +44,7 @@ export default class RecentController {
         // @ts-ignore
         const recent = await this.episodePaginator<Prisma.Episode, Prisma.EpisodeFindManyArgs>(this.databaseService.episode, {
             orderBy: {
-                createdAt: "desc"
+                airedAt: "desc"
             },
             where: {
               sources: {

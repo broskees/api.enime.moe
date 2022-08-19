@@ -48,6 +48,10 @@ export default class AnimeController {
                         id: true,
                         number: true,
                         title: true,
+                        titleVariations: true,
+                        description: true,
+                        image: true,
+                        airedAt: true,
                         sources: {
                             select: {
                                 id: true

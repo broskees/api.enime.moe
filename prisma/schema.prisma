@@ -67,21 +67,24 @@ model Genre {
 }
 
 model Episode {
-  id         String   @id @default(cuid())
-  animeId    String
-  anime      Anime    @relation(fields: [animeId], references: [id], onDelete: Cascade)
-  number     Int
-  title      String?
-  image      String?
-  sources    Source[]
-  introStart Int?
-  introEnd   Int?
-  filler     Boolean?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id              String    @id @default(cuid())
+  animeId         String
+  anime           Anime     @relation(fields: [animeId], references: [id], onDelete: Cascade)
+  number          Int
+  title           String?
+  description     String?
+  titleVariations Json?
+  image           String?
+  sources         Source[]
+  introStart      Int?
+  introEnd        Int?
+  filler          Boolean?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  airedAt         DateTime?
 
-  @@map("episode")
   @@unique([animeId, number])
+  @@map("episode")
 }
 
 model Source {
