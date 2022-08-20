@@ -32,6 +32,7 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                 _count: {
                     select: { episodes: true },
                 },
+                episodes: true
             }
         });
 
@@ -59,9 +60,9 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
             }
         }
 
-        await tvdbService.synchronize(anime); // We pull the Tvdb info here
-
         try {
+            await tvdbService.synchronize(anime); // We pull the Tvdb info here
+
             for (let scraper of await scraperService.scrapers()) {
                 if (infoOnly && !scraper.infoOnly) continue;
 
