@@ -6,7 +6,7 @@ import * as cheerio from 'cheerio';
 import dayjs from 'dayjs';
 
 @Injectable()
-export default class TvdbService {
+export default class TvdbService implements OnModuleInit {
     private readonly tvdbMappingEndpoint = "https://raw.githubusercontent.com/Anime-Lists/anime-lists/master/anime-list-full.xml";
     private readonly parser: XMLParser;
     private readonly tvdbBaseUrl = "https://thetvdb.com";
@@ -49,7 +49,7 @@ export default class TvdbService {
     async synchronize(anime) {
         const parsedMapping = await this.loadMapping();
 
-        const aniDbId = anime?.mappings["anidb"];
+        const aniDbId = anime?.mappings?.anidb;
         if (!aniDbId) return;
 
         const tvdb = parsedMapping.get(String(aniDbId));
@@ -62,7 +62,7 @@ export default class TvdbService {
 
         } else {
             const { data: seriesEntryHtml, status } = await axios.get(this.tvdbSeriesUrl + tvdb.id, { validateStatus: () => true });
-            if (status !== 200) return;
+            if (status === 404) return;
 
             let $ = cheerio.load(seriesEntryHtml);
 
@@ -73,7 +73,7 @@ export default class TvdbService {
             if (!url) return;
 
             const { data: seasonEntryHtml, status: seasonEntryStatus } = await axios.get(url, { validateStatus: () => true });
-            if (seasonEntryStatus !== 200) return;
+            if (seasonEntryStatus === 404) return;
 
             $ = cheerio.load(seasonEntryHtml);
 
@@ -100,7 +100,7 @@ export default class TvdbService {
                 if (!episode) continue;
 
                 const { data: episodeHtml, status } = await axios.get(this.tvdbBaseUrl + episode.url, { validateStatus: () => true });
-                if (status !== 200) continue;
+                if (status === 404) continue;
 
                 let $$ = cheerio.load(episodeHtml);
 
@@ -147,6 +147,5 @@ export default class TvdbService {
     }
 
     async onModuleInit() {
-
     }
 }
