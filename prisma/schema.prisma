@@ -33,7 +33,7 @@ model Anime {
   updatedAt         DateTime      @updatedAt
   format            MediaFormat?  @default(UNKNOWN)
   linkedRelations   Relation[]    @relation("linkedRelations")
-  relations         relations[]   @relation("relationsToanime")
+  relations         Relation[]    @relation("relations")
   episodes          Episode[]
   genre             Genre[]
 
@@ -105,32 +105,9 @@ model Relation {
   animeId   String
   id        String       @id @default(cuid())
   anime     Anime        @relation("linkedRelations", fields: [animeId], references: [id], onDelete: Cascade)
-  relations relations[]  @relation("RelationTo_relations")
+  linked    Anime[]      @relation("relations")
 
   @@unique([type, animeId])
-}
-
-model relations {
-  A        String
-  B        String
-  anime    Anime    @relation("relationsToanime", fields: [A], references: [id], onDelete: Cascade)
-  Relation Relation @relation("RelationTo_relations", fields: [B], references: [id], onDelete: Cascade)
-
-  @@unique([A, B], map: "_relations_AB_unique")
-  @@index([B], map: "_relations_B_index")
-  @@map("_relations")
-}
-
-model proxies {
-  id          String  @id
-  username    String
-  password    String
-  address     String  @unique
-  port_http   Int
-  port_socks5 Int
-  country     String
-  city        String?
-  used        Int
 }
 
 enum RelationType {
