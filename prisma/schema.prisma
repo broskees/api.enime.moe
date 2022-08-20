@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["orderByNulls", "interactiveTransactions"]
@@ -9,20 +6,6 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-}
-
-model Proxy {
-  id          String  @id @default(cuid())
-  username    String
-  password    String
-  address     String  @unique
-  port_http   Int
-  port_socks5 Int
-  country     String
-  city        String?
-  used        Int
-
-  @@map("proxies")
 }
 
 model Anime {
@@ -36,9 +19,7 @@ model Anime {
   title             Json
   mappings          Json          @default("{}")
   currentEpisode    Int?
-  episodes          Episode[]
   next              DateTime?
-  genre             Genre[]
   synonyms          String[]
   lastEpisodeUpdate DateTime?
   seasonInt         Int?
@@ -48,12 +29,13 @@ model Anime {
   popularity        Int?
   color             String?
   year              Int?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
   format            MediaFormat?  @default(UNKNOWN)
-  relations         Relation[]    @relation("relations")
   linkedRelations   Relation[]    @relation("linkedRelations")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  relations         relations[]   @relation("relationsToanime")
+  episodes          Episode[]
+  genre             Genre[]
 
   @@map("anime")
 }
@@ -69,21 +51,22 @@ model Genre {
 model Episode {
   id              String    @id @default(cuid())
   animeId         String
-  anime           Anime     @relation(fields: [animeId], references: [id], onDelete: Cascade)
   number          Int
   title           String?
-  description     String?
-  titleVariations Json?
   image           String?
-  sources         Source[]
   introStart      Int?
   introEnd        Int?
   filler          Boolean?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   airedAt         DateTime?
+  titleVariations Json?
+  description     String?
+  anime           Anime     @relation(fields: [animeId], references: [id], onDelete: Cascade)
+  sources         Source[]
 
   @@unique([animeId, number])
+  @@index([airedAt(sort: Desc)], map: "recent_aired_at_desc_nulls_last")
   @@map("episode")
 }
 
@@ -91,9 +74,7 @@ model Source {
   id         String     @id @default(cuid())
   url        String     @unique
   websiteId  String
-  website    Website    @relation(fields: [websiteId], references: [id], onDelete: Cascade)
   episodeId  String
-  episode    Episode    @relation(fields: [episodeId], references: [id], onDelete: Cascade)
   type       SourceType @default(DIRECT)
   referer    String?
   resolution String?
@@ -101,6 +82,8 @@ model Source {
   browser    Boolean    @default(true)
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
+  episode    Episode    @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  website    Website    @relation(fields: [websiteId], references: [id], onDelete: Cascade)
 
   @@map("source")
 }
@@ -118,13 +101,36 @@ model Website {
 }
 
 model Relation {
-  id      String       @id @default(cuid())
-  type    RelationType
-  animeId String
-  anime   Anime        @relation(name: "linkedRelations", fields: [animeId], references: [id], onDelete: Cascade)
-  linked  Anime[]      @relation("relations")
+  type      RelationType
+  animeId   String
+  id        String       @id @default(cuid())
+  anime     Anime        @relation("linkedRelations", fields: [animeId], references: [id], onDelete: Cascade)
+  relations relations[]  @relation("RelationTo_relations")
 
   @@unique([type, animeId])
+}
+
+model relations {
+  A        String
+  B        String
+  anime    Anime    @relation("relationsToanime", fields: [A], references: [id], onDelete: Cascade)
+  Relation Relation @relation("RelationTo_relations", fields: [B], references: [id], onDelete: Cascade)
+
+  @@unique([A, B], map: "_relations_AB_unique")
+  @@index([B], map: "_relations_B_index")
+  @@map("_relations")
+}
+
+model proxies {
+  id          String  @id
+  username    String
+  password    String
+  address     String  @unique
+  port_http   Int
+  port_socks5 Int
+  country     String
+  city        String?
+  used        Int
 }
 
 enum RelationType {
