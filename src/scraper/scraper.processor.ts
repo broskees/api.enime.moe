@@ -197,7 +197,7 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                                         },
                                         // @ts-ignore
                                         type: scrapedEpisode.type === SourceType.DIRECT ? "DIRECT" : "PROXY",
-                                        url: url,
+                                        target: url,
                                         resolution: scrapedEpisode.resolution,
                                         format: scrapedEpisode.format,
                                         referer: scrapedEpisode.referer?.trim()

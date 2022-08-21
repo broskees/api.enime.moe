@@ -369,11 +369,13 @@ export default class InformationService implements OnModuleInit {
         let hasNextPageCurrent = true, hasNextPagePast = true;
         let currentPage = 1;
 
+        let currentYear = 2022; //new Date().getFullYear();
+
         const requestVariables = {
-            season: this.seasons[currentSeason],
+            // season: this.seasons[currentSeason],
             page: currentPage,
-            year: new Date().getFullYear(),
-            status: "RELEASING",
+            year: currentYear,
+            // status: "RELEASING",
             format: "TV"
         };
 
@@ -390,8 +392,8 @@ export default class InformationService implements OnModuleInit {
 
                 if (!hasNextPageCurrent) {
                     current = false;
-                    requestVariables.season = this.seasons[previousSeason];
-                    requestVariables.year = this.seasons[currentSeason] === "SPRING" ? new Date().getFullYear() - 1 : new Date().getFullYear();
+                    // requestVariables.season = this.seasons[previousSeason];
+                    // requestVariables.year = this.seasons[currentSeason] === "SPRING" ? currentYear - 1 : currentYear;
 
                     currentPage = 1;
                 }

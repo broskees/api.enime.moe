@@ -67,6 +67,7 @@ export default class RecentController {
                 sources: {
                     select: {
                         id: true,
+                        target: true,
                         website: {
                             select: {
                                 name: true,

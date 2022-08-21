@@ -70,6 +70,7 @@ export default class EpisodeService {
                 sources: {
                     select: {
                         id: true,
+                        target: true,
                         website: {
                             select: {
                                 name: true,
@@ -87,6 +88,7 @@ export default class EpisodeService {
         const sources = episode.sources.map(source => {
             return {
                 id: source.id,
+                target: source.target,
                 priority: source.website.priority,
             }
         });

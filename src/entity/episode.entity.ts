@@ -55,9 +55,9 @@ export default class Episode {
     airedAt: Date | null;
 
     @ApiProperty({
-        description: "Episode source IDs",
-        type: String,
+        description: "Episode sources",
+        type: Source,
         isArray: true
     })
-    sources: string[];
+    sources: Source[];
 }

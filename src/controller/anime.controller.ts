@@ -54,7 +54,8 @@ export default class AnimeController {
                         airedAt: true,
                         sources: {
                             select: {
-                                id: true
+                                id: true,
+                                target: true
                             }
                         }
                     },
@@ -73,14 +74,7 @@ export default class AnimeController {
             ...anime,
             genre: anime.genre.map(g => g.name),
             // @ts-ignore
-            episodes: anime.episodes.filter(episode => episode.sources?.length).map(episode => {
-                return {
-                    ...episode,
-                    sources: episode.sources.map(source => {
-                        return source.id
-                    })
-                }
-            })
+            episodes: anime.episodes.filter(episode => episode.sources?.length)
         };
     }
 }

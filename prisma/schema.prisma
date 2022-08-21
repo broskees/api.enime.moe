@@ -71,7 +71,7 @@ model Episode {
 
 model Source {
   id         String     @id @default(cuid())
-  url        String     @unique
+  target     String     @unique
   websiteId  String
   episodeId  String
   type       SourceType @default(DIRECT)
