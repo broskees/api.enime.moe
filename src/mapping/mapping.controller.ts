@@ -57,9 +57,12 @@ export default class MappingController {
                         id: true,
                         number: true,
                         title: true,
+                        image: true,
+                        description: true,
                         sources: {
                             select: {
-                                id: true
+                                id: true,
+                                target: true
                             }
                         }
                     },
@@ -73,14 +76,7 @@ export default class MappingController {
             ...anime,
             genre: anime.genre.map(g => g.name),
             // @ts-ignore
-            episodes: anime.episodes.filter(episode => episode.sources?.length).map(episode => {
-                return {
-                    ...episode,
-                    sources: episode.sources.map(source => {
-                        return source.id
-                    })
-                }
-            })
+            episodes: anime.episodes.filter(episode => episode.sources?.length)
         };
     }
 }
