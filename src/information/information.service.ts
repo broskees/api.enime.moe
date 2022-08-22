@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, OnApplicationBootstrap, OnModuleInit } from '@nestjs/common';
 import { GraphQLClient } from 'graphql-request';
 import utc from 'dayjs/plugin/utc';
 import dayjs from 'dayjs';
@@ -14,15 +14,16 @@ import MappingService from '../mapping/mapping.service';
 import Prisma from '@prisma/client';
 import ProxyService from '../proxy/proxy.service';
 import fetch from 'node-fetch';
+import TvdbService from '../mapping/tvdb.service';
 
 @Injectable()
-export default class InformationService implements OnModuleInit {
+export default class InformationService implements OnApplicationBootstrap {
     private readonly client: GraphQLClient;
     private readonly anilistBaseEndpoint = "https://graphql.anilist.co";
     private readonly seasons = ["WINTER", "SPRING", "SUMMER", "FALL"];
     private informationWorker;
 
-    constructor(@Inject("DATABASE") private readonly databaseService: DatabaseService, private readonly proxyService: ProxyService, private readonly mappingService: MappingService, @InjectQueue("scrape") private readonly queue: Queue) {
+    constructor(@Inject("DATABASE") private readonly databaseService: DatabaseService, private readonly proxyService: ProxyService, private readonly mappingService: MappingService, private readonly tvdbService: TvdbService, @InjectQueue("scrape") private readonly queue: Queue) {
         this.client = new GraphQLClient(this.anilistBaseEndpoint, {
             headers: {
                 "Content-Type": "application/json",
@@ -33,7 +34,7 @@ export default class InformationService implements OnModuleInit {
         if (!process.env.TESTING) dayjs.extend(utc);
     }
 
-    async onModuleInit() {
+    async onApplicationBootstrap() {
         await this.initializeWorker();
     }
 
@@ -358,29 +359,28 @@ export default class InformationService implements OnModuleInit {
         return animeDbUpdateId || animeDb.id;
     }
 
-    async refetchAnime(): Promise<object> {
-        const currentSeason = Math.floor((new Date().getMonth() / 12 * 4)) % 4;
-
-        let previousSeason = currentSeason - 1;
-        if (previousSeason < 0) previousSeason = 3;
-
+    async loadAnimeFromAnilist(condition, includePrevious = true) {
         const trackingAnime = [];
         let current = true;
         let hasNextPageCurrent = true, hasNextPagePast = true;
         let currentPage = 1;
 
-        let currentYear = 2022; //new Date().getFullYear();
+        if (!condition.season) includePrevious = false;
+        let year = condition.year;
+
+        let previousSeason = condition.season ? condition.season - 1 : undefined;
+        if (previousSeason !== undefined && previousSeason < 0) previousSeason = 3;
 
         const requestVariables = {
-            // season: this.seasons[currentSeason],
+            ...(condition.season && { season: condition.season } ),
             page: currentPage,
-            year: currentYear,
-            // status: "RELEASING",
-            format: "TV"
+            ...(year && { year: year } ),
+            ...(condition.status && { status: condition.status } ),
+            ...(condition.format && { format: condition.format } )
         };
 
         // No way I'm going to write types for these requests...
-        while (hasNextPageCurrent || hasNextPagePast) {
+        while (hasNextPageCurrent || (includePrevious && hasNextPagePast)) {
             let animeList = await this.client.request(AIRING_ANIME, requestVariables);
 
             // @ts-ignore
@@ -390,10 +390,10 @@ export default class InformationService implements OnModuleInit {
                 hasNextPageCurrent = animeList.Page.pageInfo.hasNextPage;
                 currentPage++;
 
-                if (!hasNextPageCurrent) {
+                if (!hasNextPageCurrent && includePrevious) {
                     current = false;
-                    // requestVariables.season = this.seasons[previousSeason];
-                    // requestVariables.year = this.seasons[currentSeason] === "SPRING" ? currentYear - 1 : currentYear;
+                    requestVariables.season = this.seasons[previousSeason];
+                    requestVariables.year = this.seasons[condition.season] === "SPRING" ? year - 1 : year;
 
                     currentPage = 1;
                 }
@@ -447,5 +447,17 @@ export default class InformationService implements OnModuleInit {
             created: createdAnimeIds,
             updated: updatedAnimeIds
         }
+    }
+
+    async refetchAnime(): Promise<object> {
+        let currentYear = new Date().getFullYear();
+        const currentSeason = Math.floor((new Date().getMonth() / 12 * 4)) % 4;
+
+        return await this.loadAnimeFromAnilist({
+            year: currentYear,
+            season: currentSeason,
+            format: "TV",
+            status: "RELEASING"
+        }, true);
     }
 }

@@ -1,9 +1,10 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { CACHE_MANAGER, Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import DatabaseService from '../database/database.service';
 import axios from '../helper/request';
 import { XMLParser } from 'fast-xml-parser';
 import * as cheerio from 'cheerio';
 import dayjs from 'dayjs';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export default class TvdbService implements OnModuleInit {
@@ -13,46 +14,49 @@ export default class TvdbService implements OnModuleInit {
     private readonly tvdbSeriesUrl = this.tvdbBaseUrl + "/dereferrer/series/";
     private readonly imdbBaseUrl = "https://www.imdb.com";
     private readonly imdbSeriesUrl = this.imdbBaseUrl + "/title/";
-    private parsedMapping: Map<string, any>;
 
-    constructor(@Inject("DATABASE") private readonly databaseService: DatabaseService) {
+    constructor(@Inject("DATABASE") private readonly databaseService: DatabaseService, @Inject(CACHE_MANAGER) private readonly cacheManager: Cache) {
         this.parser = new XMLParser({
             ignoreAttributes: false
         });
     }
 
-    async loadMapping() {
-        if (this.parsedMapping) return this.parsedMapping;
+    async loadMapping(): Promise<object> {
+        let cachedMapping = await this.cacheManager.get<string>("tvdb-mapping");
+        console.log(cachedMapping)
+        if (cachedMapping) return JSON.parse(cachedMapping);
+        else {
+            const { data: rawMappings } = await axios.get(this.tvdbMappingEndpoint);
+            const mappings = this.parser.parse(rawMappings)["anime-list"]["anime"];
 
-        const { data: rawMappings } = await axios.get(this.tvdbMappingEndpoint);
-        const mappings = this.parser.parse(rawMappings)["anime-list"]["anime"];
+            const parsedMapping = {};
+            for (let mapping of mappings) {
+                const aniDbId = mapping["@_anidbid"], tvdbId = mapping["@_tvdbid"], tvdbSeason = mapping["@_defaulttvdbseason"], episodeOffset = mapping["@_episodeoffset"], imdbId = mapping["@_imdbid"];
 
-        const parsedMapping = new Map();
-        for (let mapping of mappings) {
-            const aniDbId = mapping["@_anidbid"], tvdbId = mapping["@_tvdbid"], tvdbSeason = mapping["@_defaulttvdbseason"], episodeOffset = mapping["@_episodeoffset"], imdbId = mapping["@_imdbid"];
+                if (!aniDbId || !tvdbId || !tvdbSeason || tvdbId === "unknown" || tvdbId === "hentai" || tvdbId === "OVA") continue;
 
-            if (!aniDbId || !tvdbId || !tvdbSeason || tvdbId === "unknown" || tvdbId === "hentai" || tvdbId === "OVA") continue;
+                parsedMapping[aniDbId] = {
+                    id: tvdbId,
+                    season: tvdbSeason,
+                    offset: episodeOffset ? Number.parseInt(episodeOffset) : 0,
+                    imdb: imdbId
+                };
+            }
 
-            parsedMapping.set(aniDbId, {
-                id: tvdbId,
-                season: tvdbSeason,
-                offset: episodeOffset ? Number.parseInt(episodeOffset) : 0,
-                imdb: imdbId
-            });
+            await this.cacheManager.set<string>("tvdb-mapping", JSON.stringify(parsedMapping), { ttl: 60 * 60 * 5 });
+            return parsedMapping;
         }
-
-        this.parsedMapping = parsedMapping;
-
-        return this.parsedMapping;
     }
 
     async synchronize(anime) {
         const parsedMapping = await this.loadMapping();
 
+        if (!anime.episodes) anime = await this.databaseService.anime.findUnique({ where: { id: anime.id }, include: { episodes: true }});
+
         const aniDbId = anime?.mappings?.anidb;
         if (!aniDbId) return;
 
-        const tvdb = parsedMapping.get(String(aniDbId));
+        const tvdb = parsedMapping[String(aniDbId)];
         if (!tvdb) return;
         const transactions = [];
 
@@ -147,5 +151,13 @@ export default class TvdbService implements OnModuleInit {
     }
 
     async onModuleInit() {
+        await this.synchronize(await this.databaseService.anime.findUnique({
+            where: {
+                slug: "miss-kobayashi's-dragon-maid-s"
+            },
+            include: {
+                episodes: true
+            }
+        }))
     }
 }
