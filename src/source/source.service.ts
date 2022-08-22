@@ -51,21 +51,21 @@ export default class SourceService {
         let videoUrl, subtitleUrl, referer, headers, browser = false;
 
         if (source.type === "DIRECT") { // No need to proxy the request, redirect to raw source directly
-            videoUrl = source.url;
+            videoUrl = source.target;
         } else {
             const scraper = (await this.scraperService.scrapers()).find(s => s.websiteMeta.id === source.websiteId);
             const url = source.referer ? new URL(source.referer.replaceAll("//", "/")) : undefined;
 
             let rawSource;
             try {
-                rawSource = await scraper.getRawSource(source.url, {
+                rawSource = await scraper.getRawSource(source.target, {
                     referer: url?.href,
                     ...(this.rapidCloudService.serverId && {
                         serverId: this.rapidCloudService.serverId
                     })
                 });
             } catch (e) {
-                rawSource = scraper.getSourceConsumet(url || source.url);
+                rawSource = scraper.getSourceConsumet(url || source.target);
                 Logger.error(`Error occurred while trying to fetch source ID ${source.id}, falling back to Consumet service`, e);
 
                 if (!rawSource) throw new InternalServerErrorException("Cannot obtain the URL for this source, please contact administrators.");
