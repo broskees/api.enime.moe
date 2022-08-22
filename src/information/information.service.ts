@@ -455,7 +455,7 @@ export default class InformationService implements OnApplicationBootstrap {
 
         return await this.loadAnimeFromAnilist({
             year: currentYear,
-            season: currentSeason,
+            season: this.seasons[currentSeason],
             format: "TV",
             status: "RELEASING"
         }, true);
