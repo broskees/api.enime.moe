@@ -79,9 +79,10 @@ export default class SearchController {
                 SELECT * FROM anime
                 ${where}
                 ORDER BY
-                    anime.title->>'english' ILIKE ${"%" + query + "%"} OR NULL,
-                    anime.title->>'romaji'  ILIKE ${"%" + query + "%"} OR NULL,
-                    ${"%" + query + "%"}    ILIKE ANY(synonyms)        OR NULL
+                    (CASE WHEN anime.title->>'english' IS NOT NULL THEN similarity(LOWER(anime.title->>'english'), LOWER(${query})) ELSE 0 END,
+                    + CASE WHEN anime.title->>'romaji' IS NOT NULL THEN similarity(LOWER(anime.title->>'romaji'), LOWER(${query})) ELSE 0 END,
+                    + CASE WHEN synonyms IS NOT NULL THEN most_similar(LOWER(${query}), synonyms) ELSE 0 END)
+                        DESC
                 LIMIT    ${perPage}
                 OFFSET   ${skip}
             `
