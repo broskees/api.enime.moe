@@ -23,7 +23,6 @@ export default class TvdbService implements OnModuleInit {
 
     async loadMapping(): Promise<object> {
         let cachedMapping = await this.cacheManager.get<string>("tvdb-mapping");
-        console.log(cachedMapping)
         if (cachedMapping) return JSON.parse(cachedMapping);
         else {
             const { data: rawMappings } = await axios.get(this.tvdbMappingEndpoint);
