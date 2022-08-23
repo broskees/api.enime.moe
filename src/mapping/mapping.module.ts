@@ -2,13 +2,13 @@ import { Module } from '@nestjs/common';
 import DatabaseService from '../database/database.service';
 import MappingController from './mapping.controller';
 import MappingService from './mapping.service';
-import TvdbService from './tvdb.service';
+import MetaService from './meta/meta.service';
 
 @Module({
     imports: [],
-    providers: [MappingService, TvdbService],
+    providers: [MappingService, MetaService],
     controllers: [MappingController],
-    exports: [MappingService, TvdbService]
+    exports: [MappingService, MetaService]
 })
 export default class MappingModule {
     constructor() {

@@ -14,7 +14,7 @@ import MappingService from '../mapping/mapping.service';
 import Prisma from '@prisma/client';
 import ProxyService from '../proxy/proxy.service';
 import fetch from 'node-fetch';
-import TvdbService from '../mapping/tvdb.service';
+import MetaService from '../mapping/meta/meta.service';
 
 @Injectable()
 export default class InformationService implements OnApplicationBootstrap {
@@ -23,7 +23,7 @@ export default class InformationService implements OnApplicationBootstrap {
     private readonly seasons = ["WINTER", "SPRING", "SUMMER", "FALL"];
     private informationWorker;
 
-    constructor(@Inject("DATABASE") private readonly databaseService: DatabaseService, private readonly proxyService: ProxyService, private readonly mappingService: MappingService, private readonly tvdbService: TvdbService, @InjectQueue("scrape") private readonly queue: Queue) {
+    constructor(@Inject("DATABASE") private readonly databaseService: DatabaseService, private readonly proxyService: ProxyService, private readonly mappingService: MappingService, private readonly metaService: MetaService, @InjectQueue("scrape") private readonly queue: Queue) {
         this.client = new GraphQLClient(this.anilistBaseEndpoint, {
             headers: {
                 "Content-Type": "application/json",

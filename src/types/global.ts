@@ -1,5 +1,18 @@
 import { ISubtitle } from '../extractor/types';
 
+export interface AnimeMeta {
+    episodes: EpisodeMeta[];
+}
+
+export interface EpisodeMeta {
+    title: string | undefined;
+    titleVariations: object | undefined;
+    description: string | undefined;
+    number: number;
+    image: string | undefined;
+    airedAt: Date | undefined;
+}
+
 export interface WebsiteMeta {
     id: string;
     // Maybe more fields so we use a class here

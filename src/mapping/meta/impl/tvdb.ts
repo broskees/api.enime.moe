@@ -1,13 +1,15 @@
-import { CACHE_MANAGER, Inject, Injectable, OnModuleInit } from '@nestjs/common';
-import DatabaseService from '../database/database.service';
-import axios from '../helper/request';
+import MetaProvider from '../meta.provider';
+import Prisma from '@prisma/client';
+import { AnimeMeta, EpisodeMeta } from '../../../types/global';
+import axios from '../../../helper/request';
+import { Cache } from 'cache-manager';
 import { XMLParser } from 'fast-xml-parser';
 import * as cheerio from 'cheerio';
 import dayjs from 'dayjs';
-import { Cache } from 'cache-manager';
 
-@Injectable()
-export default class TvdbService implements OnModuleInit {
+export default class TvdbProvider extends MetaProvider {
+    public override name = "TvDB";
+
     private readonly tvdbMappingEndpoint = "https://raw.githubusercontent.com/Anime-Lists/anime-lists/master/anime-list-full.xml";
     private readonly parser: XMLParser;
     private readonly tvdbBaseUrl = "https://thetvdb.com";
@@ -15,7 +17,8 @@ export default class TvdbService implements OnModuleInit {
     private readonly imdbBaseUrl = "https://www.imdb.com";
     private readonly imdbSeriesUrl = this.imdbBaseUrl + "/title/";
 
-    constructor(@Inject("DATABASE") private readonly databaseService: DatabaseService, @Inject(CACHE_MANAGER) private readonly cacheManager: Cache) {
+    constructor(cacheManager: Cache) {
+        super(cacheManager);
         this.parser = new XMLParser({
             ignoreAttributes: false
         });
@@ -47,22 +50,22 @@ export default class TvdbService implements OnModuleInit {
         }
     }
 
-    async synchronize(anime) {
+    async loadMeta(anime: Prisma.Anime & { episodes: Prisma.Episode[] }): Promise<AnimeMeta> {
         const parsedMapping = await this.loadMapping();
 
-        if (!anime.episodes) anime = await this.databaseService.anime.findUnique({ where: { id: anime.id }, include: { episodes: true }});
-
+        // @ts-ignore
         const aniDbId = anime?.mappings?.anidb;
-        if (!aniDbId) return;
+        if (!aniDbId) return undefined;
 
         const tvdb = parsedMapping[String(aniDbId)];
-        if (!tvdb) return;
-        const transactions = [];
+        if (!tvdb) return undefined;
+
+        const episodeMetas: EpisodeMeta[] = [];
 
         if (tvdb.id === "movie" && tvdb.imdb) { // Don't include information for movies for now (anilist already has them but I might include photos provided by IMDB?? I'm not sure
             // const { data: seriesEntryHtml } = await axios.get(this.imdbSeriesUrl + tvdb.imdb);
             // let $ = cheerio.load(seriesEntryHtml);
-
+            return undefined;
         } else {
             const { data: seriesEntryHtml, status } = await axios.get(this.tvdbSeriesUrl + tvdb.id, { validateStatus: () => true });
             if (status === 404) return;
@@ -111,8 +114,14 @@ export default class TvdbService implements OnModuleInit {
                     const element = $$(`#translations > .change_translation_text[data-language="${lang}"]`).first();
                     if (!element) return undefined;
 
+                    let title = element.data("title");
+
+                    if (title) {
+                        if (title === "TBA" || title === "TBD") title = undefined;
+                    }
+
                     return {
-                        title: element.data("title"),
+                        title: title,
                         description: element.find("p").first().text()?.replaceAll("\n\n", "\n")
                     }
                 };
@@ -122,41 +131,22 @@ export default class TvdbService implements OnModuleInit {
                 const thumbnail = $$(".thumbnail > img")?.first()?.attr("src");
                 const airingTime = $$('a[href^="/on-today/"]')?.first()?.text();
 
-                const updatingObject = {};
-                if (!episodeDb.title && englishTranslation) updatingObject["title"] = englishTranslation.title;
-                if (!episodeDb.airedAt && airingTime) updatingObject["airedAt"] = dayjs(airingTime).toDate();
-
-                updatingObject["image"] = thumbnail;
-                updatingObject["titleVariations"] = {
-                    native: japaneseTranslation.title,
-                    english: englishTranslation.title
-                }
-
-                updatingObject["description"] = englishTranslation.description;
-
-
-                transactions.push(this.databaseService.episode.update({
-                    where: {
-                        id: episodeDb.id
+                episodeMetas.push({
+                    image: thumbnail,
+                    titleVariations: {
+                        native: japaneseTranslation.title,
+                        english: englishTranslation.title
                     },
-                    data: {
-                        ...updatingObject
-                    }
-                }));
+                    description: englishTranslation.description,
+                    airedAt: (!episodeDb.airedAt && airingTime) ? dayjs(airingTime).toDate() : undefined,
+                    title: englishTranslation.title as string,
+                    number: episodeDb.number
+                })
             }
         }
 
-        await this.databaseService.$transaction(transactions);
-    }
-
-    async onModuleInit() {
-        await this.synchronize(await this.databaseService.anime.findUnique({
-            where: {
-                slug: "miss-kobayashi's-dragon-maid-s"
-            },
-            include: {
-                episodes: true
-            }
-        }))
+        return {
+            episodes: episodeMetas
+        };
     }
 }

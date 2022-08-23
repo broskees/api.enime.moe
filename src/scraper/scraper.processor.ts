@@ -8,13 +8,13 @@ import dayjs from 'dayjs';
 import DatabaseService from '../database/database.service';
 import ScraperService from './scraper.service';
 import fetch from 'node-fetch';
-import TvdbService from '../mapping/tvdb.service';
+import MetaService from '../mapping/meta/meta.service';
 
 export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
     const app = await NestFactory.create(ScraperModule);
     let scraperService = app.select(ScraperModule).get(ScraperService);
     let databaseService = app.select(ScraperModule).get(DatabaseService);
-    let tvdbService = app.select(ScraperModule).get(TvdbService);
+    let metaService = app.select(ScraperModule).get(MetaService);
 
     const { animeIds: ids, infoOnly } = job.data;
 
@@ -61,7 +61,7 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
         }
 
         try {
-            await tvdbService.synchronize(anime); // We pull the Tvdb info here
+            await metaService.synchronize(anime); // We pull the Tvdb info here
 
             for (let scraper of await scraperService.scrapers()) {
                 if (infoOnly && !scraper.infoOnly) continue;
