@@ -94,7 +94,6 @@ export default class AnidbProvider extends MetaProvider {
             })
         }
 
-        console.log(episodeMetas)
         return {
             episodes: episodeMetas
         }

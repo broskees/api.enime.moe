@@ -59,6 +59,7 @@ export default class MappingController {
                         title: true,
                         image: true,
                         description: true,
+                        airedAt: true,
                         sources: {
                             select: {
                                 id: true,

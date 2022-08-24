@@ -77,5 +77,17 @@ export default class MetaService implements OnModuleInit {
     }
 
     async onModuleInit() {
+        let animeList = await this.databaseService.anime.findMany({
+            where: {
+                id: "cl6k4l4nt000yh4lu37y89cih"
+            },
+            include: {
+                episodes: true
+            }
+        });
+
+        for (let anime of animeList) {
+            await this.synchronize(anime);
+        }
     }
 }
