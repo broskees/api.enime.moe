@@ -67,7 +67,7 @@ export default class MetaService implements OnModuleInit {
             res = await load(provider, anime);
         }
 
-        if (!res || updatedEpisodeInfo.some(e => !e.titleVariations || !e.title || !e.description || !e.airedAt)) { // Anidb does not provide episode image, we should not bother it for this
+        if (anime.episodes.length && (!res || updatedEpisodeInfo.some(e => !e.titleVariations || !e.title || !e.description || !e.airedAt))) { // Anidb does not provide episode image, we should not bother it for this
             for (let provider of this.backupProviders) {
                 if (!provider.enabled) continue;
 

@@ -81,7 +81,7 @@ export default class RecentController {
         }, { page: page, perPage: perPage })
 
         // @ts-ignore
-        recent.data = recent.data.filter(episode => episode.sources?.length).map(episode => {
+        recent.data = recent.data.map(episode => {
             // @ts-ignore
             const sources = episode.sources.map(source => {
                 return {
