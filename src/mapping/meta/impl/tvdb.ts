@@ -8,6 +8,7 @@ import * as cheerio from 'cheerio';
 import dayjs from 'dayjs';
 
 export default class TvdbProvider extends MetaProvider {
+    public override enabled = true;
     public override name = "TvDB";
 
     private readonly tvdbMappingEndpoint = "https://raw.githubusercontent.com/Anime-Lists/anime-lists/master/anime-list-full.xml";

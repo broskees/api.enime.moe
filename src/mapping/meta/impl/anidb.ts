@@ -7,6 +7,7 @@ import axios from '../../../helper/request';
 import dayjs from 'dayjs';
 
 export default class AnidbProvider extends MetaProvider {
+    public override enabled = true;
     public override name = "AniDB";
     private readonly parser: XMLParser;
 

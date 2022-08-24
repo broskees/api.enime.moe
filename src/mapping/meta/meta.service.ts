@@ -1,4 +1,4 @@
-import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common';
+import { CACHE_MANAGER, Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import DatabaseService from '../../database/database.service';
 import { Cache } from 'cache-manager';
 import MetaProvider from './meta.provider';
@@ -6,7 +6,7 @@ import TvdbProvider from './impl/tvdb';
 import AnidbProvider from './impl/anidb';
 
 @Injectable()
-export default class MetaService {
+export default class MetaService implements OnModuleInit {
     private providers: MetaProvider[] = [];
     private backupProviders: MetaProvider[] = [];
 
@@ -29,10 +29,11 @@ export default class MetaService {
 
         const load = async (provider, anime) => {
             const animeMeta = await provider.loadMeta(anime);
-            if (!animeMeta) return;
+            if (!animeMeta) return false;
 
             for (let episode of anime.episodes) {
                 const episodeMeta = animeMeta.episodes.find(e => e.number === episode.number);
+                console.log(episodeMeta)
                 if (!episodeMeta) continue;
 
                 const updatingObject = {};
@@ -54,20 +55,27 @@ export default class MetaService {
                     }
                 }));
             }
+
+            return true;
         }
+
+        let res = false;
 
         for (let provider of this.providers) {
             if (!provider.enabled) continue;
 
-            await load(provider, anime);
+            res = await load(provider, anime);
         }
 
-        if (updatedEpisodeInfo.some(e => !e.titleVariations || !e.title || !e.description || !e.airedAt)) { // Anidb does not provide episode image, we should not bother it for this
+        if (!res || updatedEpisodeInfo.some(e => !e.titleVariations || !e.title || !e.description || !e.airedAt)) { // Anidb does not provide episode image, we should not bother it for this
             for (let provider of this.backupProviders) {
                 if (!provider.enabled) continue;
 
                 await load(provider, anime);
             }
         }
+    }
+
+    async onModuleInit() {
     }
 }
