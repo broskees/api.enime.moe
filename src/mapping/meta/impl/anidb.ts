@@ -36,7 +36,9 @@ export default class AnidbProvider extends MetaProvider {
 
         const animeData = this.parser.parse(rawAnimeData)["anime"];
 
-        const episodes = animeData.episodes.episode;
+        const episodes = animeData?.episodes?.episode;
+
+        if (!episodes?.length) return undefined;
 
         const episodeMetas: EpisodeMeta[] = [];
 

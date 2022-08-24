@@ -33,7 +33,6 @@ export default class MetaService implements OnModuleInit {
 
             for (let episode of anime.episodes) {
                 const episodeMeta = animeMeta.episodes.find(e => e.number === episode.number);
-                console.log(episodeMeta)
                 if (!episodeMeta) continue;
 
                 const updatingObject = {};
