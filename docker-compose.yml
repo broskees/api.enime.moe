@@ -18,8 +18,6 @@ services:
       - ADMIN_KEY=${ADMIN_KEY}
       - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
       - PROXY_API_KEY=${PROXY_API_KEY}
-      - ANIDB_CLIENT_ID=${ANIDB_CLIENT_ID}
-      - ANIDB_CLIENT_VER=${ANIDB_CLIENT_VER}
   db:
     image: postgres:14.1-alpine
     restart: always

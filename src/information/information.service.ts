@@ -430,7 +430,7 @@ export default class InformationService implements OnApplicationBootstrap {
                     updatedAnimeIds.push(animeDb.id);
                 }
 
-                await this.databaseService.anime.update({
+                let dbAnime = await this.databaseService.anime.update({
                     where: {
                         anilistId: anime.id
                     },
@@ -438,6 +438,8 @@ export default class InformationService implements OnApplicationBootstrap {
                         ...animeDbObject
                     }
                 });
+
+                await this.metaService.synchronize(dbAnime);
             }
 
             await this.fetchRelations(anime.id, anime);

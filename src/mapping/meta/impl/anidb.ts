@@ -3,15 +3,18 @@ import Prisma from '@prisma/client';
 import { AnimeMeta, EpisodeMeta } from '../../../types/global';
 import { Cache } from 'cache-manager';
 import { XMLParser } from 'fast-xml-parser';
-import axios from '../../../helper/request';
+import axios, { proxiedGet, USER_AGENT } from '../../../helper/request';
 import dayjs from 'dayjs';
+import * as cheerio from 'cheerio';
+import { isNumeric } from '../../../helper/tool';
 
 export default class AnidbProvider extends MetaProvider {
     public override enabled = true;
     public override name = "AniDB";
     private readonly parser: XMLParser;
+    private readonly baseUrl = "https://anidb.net";
 
-    private readonly animeUrl = "http://api.anidb.net:9001/httpapi?request=anime&client={client}&clientver={clientVer}&protover=1&aid={anidbId}";
+    private readonly animeUrl = this.baseUrl + "/anime/{anidbId}";
 
     constructor(cacheManager: Cache) {
         super(cacheManager);
@@ -26,41 +29,48 @@ export default class AnidbProvider extends MetaProvider {
         if (!aniDbId) return undefined;
 
         const url = this.animeUrl
-            .replace("{client}", process.env.ANIDB_CLIENT_ID)
-            .replace("{clientVer}", process.env.ANIDB_CLIENT_VER)
-            // @ts-ignore
             .replace("{anidbId}", aniDbId);
 
-        const { data: rawAnimeData, status } = await axios.get(url, { validateStatus: () => true });
+        const { data: rawAnimeData, status } = await proxiedGet(url, {
+            validateStatus: () => true
+        });
+
         if (status === 404) return undefined;
 
-        const animeData = this.parser.parse(rawAnimeData)["anime"];
+        let $ = cheerio.load(rawAnimeData);
+        let episodeElements = $("#eplist > tbody > tr");
 
-        const episodes = animeData?.episodes?.episode;
-
-        if (!episodes?.length) return undefined;
+        if (!episodeElements?.length) return undefined;
 
         const episodeMetas: EpisodeMeta[] = [];
 
-        for (let episode of episodes) {
-            let { title, summary, airdate, epno } = episode;
+        const episodePromises = [];
 
-            if (!Number.isInteger(epno["#text"])) continue;
-
-            epno = Number.parseInt(epno["#text"]);
-
-            let japaneseTitle;
-            let englishTitle;
-
-            if (Array.isArray(title)) {
-                japaneseTitle = title.find(t => t["@_xml:lang"] === "ja");
-                if (japaneseTitle) japaneseTitle = japaneseTitle["#text"];
-
-                englishTitle = title.find(t => t["@_xml:lang"] === "en");
-                if (englishTitle) englishTitle = englishTitle["#text"];
+        episodeElements.each((_, episode) => {
+            const episodeIdElement = $(episode).find(".eid > a").first();
+            const episodeUrl = episodeIdElement.prop("href");
+            const episodeNumber = episodeIdElement.find("abbr")?.first()?.text()?.trim();
+            if (episodeNumber && isNumeric(episodeNumber)) {
+                episodePromises.push([proxiedGet(this.baseUrl + episodeUrl), Number.parseInt(episodeNumber)]);
             }
+        });
 
-            if (!summary?.length) summary = undefined;
+        for (let [episodeDataPromise, episodeNumber] of episodePromises) {
+            const episodeData = await episodeDataPromise;
+            const { data: episode, status } = episodeData;
+
+            const $$ = cheerio.load(episode);
+
+            let airedAtRaw = $$("[itemprop='datePublished']")?.prop("content");
+            let airedAt = undefined;
+            if (airedAtRaw) airedAt = dayjs(airedAtRaw).toDate();
+
+            const englishTitle = $$("#tab_2_pane > div > table > tbody > tr.g_odd.romaji > td > span")?.text();
+            const japaneseTitle = $$("#tab_2_pane > div > table > tbody > tr.g_odd.official.verified.no > td > label")?.text();
+
+            let description = $$("[itemprop='description']")?.text()?.replace(/(S|s)ource: (.*)/igm, "")?.replaceAll("\n", "")?.replaceAll("\t", "");
+
+            if (!description?.length) description = undefined;
 
             episodeMetas.push({
                 title: englishTitle,
@@ -69,10 +79,10 @@ export default class AnidbProvider extends MetaProvider {
                     english: englishTitle
                 },
                 image: undefined,
-                description: summary,
-                airedAt: dayjs(airdate).toDate(),
-                number: epno
-            });
+                description: description,
+                airedAt: airedAt,
+                number: episodeNumber
+            })
         }
 
         return {

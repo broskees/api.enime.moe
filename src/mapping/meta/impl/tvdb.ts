@@ -101,7 +101,19 @@ export default class TvdbProvider extends MetaProvider {
 
 
             for (let episodeDb of anime.episodes) {
-                if (episodeDb.image && episodeDb.title && episodeDb.titleVariations && episodeDb.airedAt) continue;
+                if (episodeDb.image && episodeDb.title && episodeDb.description && episodeDb.titleVariations && episodeDb.airedAt) {
+                    episodeMetas.push({
+                        image: episodeDb.image,
+                        // @ts-ignore
+                        titleVariations: episodeDb.titleVariations,
+                        description: episodeDb.description,
+                        airedAt: episodeDb.airedAt,
+                        title: episodeDb.title,
+                        number: episodeDb.number
+                    });
+
+                    continue;
+                }
 
                 const episode = episodes.find(e => e.number - tvdb.offset === episodeDb.number);
                 if (!episode) continue;
