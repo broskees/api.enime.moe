@@ -32,7 +32,11 @@ export default class AnidbProvider extends MetaProvider {
             .replace("{anidbId}", aniDbId);
 
         const { data: rawAnimeData, status } = await proxiedGet(url, {
-            validateStatus: () => true
+            validateStatus: () => true,
+            headers: {
+                referer: this.baseUrl,
+                origin: "https://anidb.net"
+            }
         });
 
         if (status === 404) return undefined;
@@ -51,7 +55,12 @@ export default class AnidbProvider extends MetaProvider {
             const episodeUrl = episodeIdElement.prop("href");
             const episodeNumber = episodeIdElement.find("abbr")?.first()?.text()?.trim();
             if (episodeNumber && isNumeric(episodeNumber)) {
-                episodePromises.push([proxiedGet(this.baseUrl + episodeUrl), Number.parseInt(episodeNumber)]);
+                episodePromises.push([proxiedGet(this.baseUrl + episodeUrl, {
+                    headers: {
+                        referer: url,
+                        origin: "https://anidb.net"
+                    }
+                }), Number.parseInt(episodeNumber)]);
             }
         });
 
@@ -85,6 +94,7 @@ export default class AnidbProvider extends MetaProvider {
             })
         }
 
+        console.log(episodeMetas)
         return {
             episodes: episodeMetas
         }

@@ -29,6 +29,7 @@ export default class MetaService implements OnModuleInit {
 
         const load = async (provider, anime) => {
             const animeMeta = await provider.loadMeta(anime);
+
             if (!animeMeta) return false;
 
             for (let episode of anime.episodes) {
@@ -76,13 +77,5 @@ export default class MetaService implements OnModuleInit {
     }
 
     async onModuleInit() {
-        await this.synchronize(await this.databaseService.anime.findUnique({
-            where: {
-                id: "cl6k4l2ij000lh4luhhwq5ieg"
-            },
-            include: {
-                episodes: true
-            }
-        }))
     }
 }
