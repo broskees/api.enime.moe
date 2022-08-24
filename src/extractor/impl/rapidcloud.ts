@@ -26,23 +26,11 @@ class RapidCloud extends VideoExtractor {
             };
 
             let res = null;
-            const text = await (await fetch(videoUrl.href, options)).text();
-            const html = load(text).html();
-            const key = html
-                .substring(html.indexOf('var recaptchaSiteKey ='), html.lastIndexOf(',')!)
-                .split(' = ')[1]
-                .replace(/\'/g, '');
-            const _number = html
-                .substring(html.indexOf('recaptchaNumber ='), html.lastIndexOf(';')!)
-                .split(' = ')[1]
-                .replace(/\'/g, '');
 
             const sId = this.serverId;
 
-            const _token = await this.captcha(videoUrl.href, key);
-
             res = await (await fetch(
-                `${this.host}/ajax/embed-6/getSources?id=${id}&sId=${sId}&_number=${_number}&_token=${_token}`,
+                `${this.host}/ajax/embed-6/getSources?id=${id}&sId=${sId}`,
                 options
             )).json()  ;
 
