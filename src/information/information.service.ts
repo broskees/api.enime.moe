@@ -226,8 +226,6 @@ export default class InformationService implements OnApplicationBootstrap {
             })))
         }
 
-        const transactions = [];
-
         for (let anime of animeList) {
             // @ts-ignore
             let mapping = mappings?.find(mapping => mapping?.anilist_id == anime.anilistId);
@@ -241,7 +239,7 @@ export default class InformationService implements OnApplicationBootstrap {
                 mappingObject[k.replace("_id", "")] = mapping[k];
             }
 
-            transactions.push(this.databaseService.anime.update({
+            let dbAnime = await this.databaseService.anime.update({
                 where: {
                     id: anime.id
                 },
@@ -249,11 +247,15 @@ export default class InformationService implements OnApplicationBootstrap {
                     mappings: {
                         ...mappingObject
                     }
+                },
+                include: {
+                    episodes: true
                 }
-            }));
+            });
+
+            if (!dbAnime.episodes.some(ep => !ep.airedAt || !ep.title || !ep.titleVariations || !ep.image || !ep.description)) await this.metaService.synchronize(dbAnime);
         }
 
-        await this.databaseService.$transaction(transactions);
     }
 
     async convertToDbAnime(anilistAnime) {
@@ -426,11 +428,7 @@ export default class InformationService implements OnApplicationBootstrap {
                 });
                 createdAnimeIds.push(id);
             } else {
-                if (animeDb.currentEpisode !== animeDbObject.currentEpisode) { // Anime exists in the database but current episode count from Anilist is not the one we stored in database. This means the anime might have updated, push it to scrape queue
-                    updatedAnimeIds.push(animeDb.id);
-                }
-
-                let dbAnime = await this.databaseService.anime.update({
+                await this.databaseService.anime.update({
                     where: {
                         anilistId: anime.id
                     },
@@ -439,7 +437,9 @@ export default class InformationService implements OnApplicationBootstrap {
                     }
                 });
 
-                await this.metaService.synchronize(dbAnime);
+                if (animeDb.currentEpisode !== animeDbObject.currentEpisode) { // Anime exists in the database but current episode count from Anilist is not the one we stored in database. This means the anime might have updated, push it to scrape queue
+                    updatedAnimeIds.push(animeDb.id);
+                }
             }
 
             await this.fetchRelations(anime.id, anime);

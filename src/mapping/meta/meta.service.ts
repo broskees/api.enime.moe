@@ -16,7 +16,7 @@ export default class MetaService implements OnModuleInit {
     }
 
     async synchronize(anime) {
-        if (!anime.episodes?.length) anime = await this.databaseService.anime.findUnique({
+        if (!anime.episodes) anime = await this.databaseService.anime.findUnique({
             where: {
                 id: anime.id
             },
@@ -24,6 +24,8 @@ export default class MetaService implements OnModuleInit {
                 episodes: true
             }
         });
+
+        if (anime.format === "MOVIE") return;
 
         const updatedEpisodeInfo = [];
 

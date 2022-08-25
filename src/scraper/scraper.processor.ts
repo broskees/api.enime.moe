@@ -24,7 +24,7 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
     for (let id of ids) {
         Logger.debug(`Received a job to fetch anime with ID ${id}, info only mode: ${infoOnly}`);
 
-        const anime = await databaseService.anime.findUnique({
+        let anime = await databaseService.anime.findUnique({
             where: {
                 id
             },
@@ -61,8 +61,6 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
         }
 
         try {
-            await metaService.synchronize(anime); // We pull the Tvdb info here
-
             for (let scraper of await scraperService.scrapers()) {
                 if (infoOnly && !scraper.infoOnly) continue;
 
@@ -235,11 +233,23 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
             Logger.error(e.stack);
         }
 
+        let updatedAnime = await databaseService.anime.findUnique({
+            where: {
+                id: anime.id
+            },
+            include: {
+                episodes: true
+            }
+        });
+
+        if (!updatedAnime.episodes.some(ep => !ep.airedAt || !ep.title || !ep.titleVariations || !ep.image || !ep.description)) await this.metaService.synchronize(updatedAnime);
+
         progress++;
         await job.progress(progress);
     }
 
     if (updated.length) {
+
         const groupedUpdates = updated.reduce(function (r, a) {
             r[a.source] = r[a.source] || [];
             r[a.source].push(a);
