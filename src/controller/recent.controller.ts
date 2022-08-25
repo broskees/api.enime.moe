@@ -47,7 +47,8 @@ export default class RecentController {
                 airedAt: {
                     sort: "desc",
                     nulls: "last"
-                }
+                },
+                createdAt: "desc"
             },
             where: {
               sources: {

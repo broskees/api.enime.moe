@@ -3,10 +3,10 @@ import axios, { AxiosRequestConfig } from 'axios';
 export const USER_AGENT =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36';
 
-const proxyHosts = ["https://proxy.enime.moe", "https://proxy2.enime.moe"];
+const proxyHosts = ["https://proxy.enime.moe"];
 
 const proxyHost = () => {
-    return proxyHosts[Math.floor(Math.random() * proxyHosts.length)];
+    return proxyHosts[0];
 }
 
 axiosRetry(axios, {
