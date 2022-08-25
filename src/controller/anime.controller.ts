@@ -70,11 +70,13 @@ export default class AnimeController {
 
         if (!anime) throw new NotFoundException(`The anime with ID or slug ${id} does not exist`);
 
+        anime.episodes = anime.episodes.filter(episode => episode.sources?.length).sort((a, b) => a.number - b.number);
+
         return {
             ...anime,
             genre: anime.genre.map(g => g.name),
             // @ts-ignore
-            episodes: anime.episodes.filter(episode => episode.sources?.length)
+            episodes: anime.episodes
         };
     }
 }

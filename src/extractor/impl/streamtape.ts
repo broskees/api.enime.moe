@@ -9,7 +9,6 @@ class StreamTape extends VideoExtractor {
 
     override extract = async (videoUrl: URL): Promise<IVideo> => {
         try {
-            console.log(videoUrl)
             const res = await (await fetch(videoUrl.href).catch(() => {
                 throw new Error("Video not found");
             })).text();

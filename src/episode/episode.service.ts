@@ -100,6 +100,7 @@ export default class EpisodeService {
             anime: {
                 // @ts-ignore
                 ...episode.anime,
+                episodes: episode.anime.episodes.sort((a, b) => a.number - b.number),
                 genre: episode.anime.genre.map(g => g.name)
             },
             // @ts-ignore

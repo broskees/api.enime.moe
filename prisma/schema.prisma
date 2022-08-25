@@ -84,6 +84,7 @@ model Source {
   episode    Episode    @relation(fields: [episodeId], references: [id], onDelete: Cascade)
   website    Website    @relation(fields: [websiteId], references: [id], onDelete: Cascade)
 
+  @@unique([episodeId, websiteId])
   @@map("source")
 }
 

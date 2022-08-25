@@ -456,8 +456,8 @@ export default class InformationService implements OnApplicationBootstrap {
         const currentSeason = Math.floor((new Date().getMonth() / 12 * 4)) % 4;
 
         return await this.loadAnimeFromAnilist({
-            year: currentYear,
-            season: this.seasons[currentSeason],
+            // year: currentYear,
+            // season: this.seasons[currentSeason],
             format: "TV",
             status: "RELEASING"
         }, true);

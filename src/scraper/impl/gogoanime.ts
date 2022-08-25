@@ -1,4 +1,4 @@
-import Scraper, { USER_AGENT } from '../scraper';
+import Scraper from '../scraper';
 import * as cheerio from 'cheerio';
 import { AnimeWebPage, Episode, RawSource, SourceType } from '../../types/global';
 import fetch from 'node-fetch';

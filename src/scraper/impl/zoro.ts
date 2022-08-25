@@ -1,4 +1,4 @@
-import Scraper, { USER_AGENT } from '../scraper';
+import Scraper from '../scraper';
 import * as cheerio from 'cheerio';
 import * as similarity from 'string-similarity';
 import { Episode, RawSource } from '../../types/global';

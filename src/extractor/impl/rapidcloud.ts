@@ -1,8 +1,8 @@
 import VideoExtractor from '../extractor';
 import { ISubtitle, IVideo } from '../types';
-import { USER_AGENT } from '../../scraper/scraper';
 import fetch from 'node-fetch';
 import { load } from 'cheerio';
+import { USER_AGENT } from '../../helper/request';
 
 class RapidCloud extends VideoExtractor {
     protected override serverName = 'RapidCloud';
