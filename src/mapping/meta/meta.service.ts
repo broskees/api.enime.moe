@@ -6,7 +6,7 @@ import TvdbProvider from './impl/tvdb';
 import AnidbProvider from './impl/anidb';
 
 @Injectable()
-export default class MetaService implements OnModuleInit {
+export default class MetaService {
     private providers: MetaProvider[] = [];
     private backupProviders: MetaProvider[] = [];
 
@@ -73,8 +73,5 @@ export default class MetaService implements OnModuleInit {
                 }
             }
         }
-    }
-
-    async onModuleInit() {
     }
 }

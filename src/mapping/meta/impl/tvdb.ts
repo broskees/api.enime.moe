@@ -57,7 +57,6 @@ export default class TvdbProvider extends MetaProvider {
         // @ts-ignore
         const aniDbId = anime?.mappings?.anidb;
 
-        console.log(aniDbId)
         if (!aniDbId) return undefined;
 
         const tvdb = parsedMapping[String(aniDbId)];

@@ -253,7 +253,7 @@ export default class InformationService implements OnApplicationBootstrap {
                 }
             });
 
-            if (!dbAnime.episodes.some(ep => !ep.airedAt || !ep.title || !ep.titleVariations || !ep.image || !ep.description)) await this.metaService.synchronize(dbAnime);
+            if (dbAnime.episodes.some(ep => !ep.airedAt || !ep.title || !ep.titleVariations || !ep.image || !ep.description)) await this.metaService.synchronize(dbAnime);
         }
 
     }
