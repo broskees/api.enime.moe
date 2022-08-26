@@ -51,11 +51,13 @@ export default class TvdbProvider extends MetaProvider {
         }
     }
 
-    async loadMeta(anime: Prisma.Anime & { episodes: Prisma.Episode[] }): Promise<AnimeMeta> {
+    async loadMeta(anime, excludedEpisodes): Promise<AnimeMeta> {
         const parsedMapping = await this.loadMapping();
 
         // @ts-ignore
         const aniDbId = anime?.mappings?.anidb;
+
+        console.log(aniDbId)
         if (!aniDbId) return undefined;
 
         const tvdb = parsedMapping[String(aniDbId)];
@@ -89,6 +91,8 @@ export default class TvdbProvider extends MetaProvider {
                 const rows = $(element).find("td");
                 const number = $(rows[0]).text().match(/S(\d)+E(\d+)/).slice(1).map(x => +x)[1];
 
+                if (excludedEpisodes.includes(number)) return;
+
                 if (number <= tvdb.offset) return;
 
                 const url = $(rows[1]).find("a").first().attr("href");
@@ -101,6 +105,8 @@ export default class TvdbProvider extends MetaProvider {
 
 
             for (let episodeDb of anime.episodes) {
+                if (excludedEpisodes.includes(episodeDb.number)) continue;
+
                 if (episodeDb.image && episodeDb.title && episodeDb.description && episodeDb.titleVariations && episodeDb.airedAt) {
                     episodeMetas.push({
                         image: episodeDb.image,

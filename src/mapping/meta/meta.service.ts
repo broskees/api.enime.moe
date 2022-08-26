@@ -15,7 +15,7 @@ export default class MetaService implements OnModuleInit {
         this.backupProviders.push(new AnidbProvider(this.cacheManager));
     }
 
-    async synchronize(anime) {
+    async synchronize(anime, useBackup = true) {
         if (!anime.episodes) anime = await this.databaseService.anime.findUnique({
             where: {
                 id: anime.id
@@ -28,14 +28,15 @@ export default class MetaService implements OnModuleInit {
         if (anime.format === "MOVIE") return;
 
         const updatedEpisodeInfo = [];
+        let excludedEpisodes = anime.episodes.filter(e => e.titleVariations && e.title && e.description && e.airedAt).map(e => e.number);
 
         const load = async (provider, anime, excluded = undefined) => {
             const animeMeta = await provider.loadMeta(anime, excluded);
 
             if (!animeMeta) return false;
 
-            for (let episode of anime.episodes) {
-                const episodeMeta = animeMeta.episodes.find(e => e.number === episode.number);
+            for (let episodeMeta of animeMeta.episodes) {
+                const episode = anime.episodes.find(e => e.number === episodeMeta.number);
                 if (!episodeMeta) continue;
 
                 const updatingObject = {};
@@ -66,16 +67,18 @@ export default class MetaService implements OnModuleInit {
         for (let provider of this.providers) {
             if (!provider.enabled) continue;
 
-            res = await load(provider, anime);
+            res = await load(provider, anime, excludedEpisodes);
         }
 
-        const excludedEpisodes = updatedEpisodeInfo.filter(e => e.titleVariations && e.title && e.description && e.airedAt).map(e => e.number);
+        if (useBackup) {
+            excludedEpisodes = updatedEpisodeInfo.filter(e => e.titleVariations && e.title && e.description && e.airedAt).map(e => e.number);
 
-        if (anime.episodes.length && (!res || (excludedEpisodes.length !== updatedEpisodeInfo.length))) { // Anidb does not provide episode image, we should not bother it for this
-            for (let provider of this.backupProviders) {
-                if (!provider.enabled) continue;
+            if (anime.episodes.length && (!res || (excludedEpisodes.length !== updatedEpisodeInfo.length))) { // Anidb does not provide episode image, we should not bother it for this
+                for (let provider of this.backupProviders) {
+                    if (!provider.enabled) continue;
 
-                await load(provider, anime, excludedEpisodes);
+                    await load(provider, anime, excludedEpisodes);
+                }
             }
         }
     }

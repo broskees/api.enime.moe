@@ -23,7 +23,7 @@ export default class AnidbProvider extends MetaProvider {
         });
     }
 
-    async loadMeta(anime: Prisma.Anime, excludedEpisodes: number[]): Promise<AnimeMeta> {
+    async loadMeta(anime, excludedEpisodes): Promise<AnimeMeta> {
         // @ts-ignore
         const aniDbId = anime?.mappings?.anidb;
         if (!aniDbId) return undefined;
