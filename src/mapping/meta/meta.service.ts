@@ -36,15 +36,7 @@ export default class MetaService implements OnModuleInit {
             if (!animeMeta) return false;
 
             for (let episodeMeta of animeMeta.episodes) {
-                const episode = anime.episodes.find(e => e.number === episodeMeta.number);
                 if (!episodeMeta) continue;
-
-                const updatingObject = {};
-                if (!episode.titleVariations && episodeMeta.titleVariations) updatingObject["titleVariations"] = episodeMeta.titleVariations;
-                if (!episode.title && episodeMeta.title) updatingObject["title"] = episodeMeta.title;
-                if (!episode.image && episodeMeta.image) updatingObject["image"] = episodeMeta.image;
-                if (!episode.description && episodeMeta.description) updatingObject["description"] = episodeMeta.description;
-                if (!episode.airedAt && episodeMeta.airedAt) updatingObject["airedAt"] = episodeMeta.airedAt;
 
                 updatedEpisodeInfo.push(await this.databaseService.episode.update({
                     where: {
@@ -54,7 +46,7 @@ export default class MetaService implements OnModuleInit {
                         }
                     },
                     data: {
-                        ...updatingObject
+                        ...episodeMeta
                     }
                 }));
             }

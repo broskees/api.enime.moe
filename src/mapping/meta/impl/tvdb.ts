@@ -133,10 +133,10 @@ export default class TvdbProvider extends MetaProvider {
                     const element = $$(`#translations > .change_translation_text[data-language="${lang}"]`).first();
                     if (!element) return undefined;
 
-                    let title = element.data("title");
+                    let title = element.data("title") as string | undefined;
 
                     if (title) {
-                        if (title === "TBA" || title === "TBD") title = undefined;
+                        if (title === "TBA" || title === "TBD" || title.startsWith("Episode")) title = undefined;
                     }
 
                     return {
