@@ -23,7 +23,7 @@ export default class AnidbProvider extends MetaProvider {
         });
     }
 
-    async loadMeta(anime: Prisma.Anime): Promise<AnimeMeta> {
+    async loadMeta(anime: Prisma.Anime, excludedEpisodes: number[]): Promise<AnimeMeta> {
         // @ts-ignore
         const aniDbId = anime?.mappings?.anidb;
         if (!aniDbId) return undefined;
@@ -55,12 +55,15 @@ export default class AnidbProvider extends MetaProvider {
             const episodeUrl = episodeIdElement.prop("href");
             const episodeNumber = episodeIdElement.find("abbr")?.first()?.text()?.trim();
             if (episodeNumber && isNumeric(episodeNumber)) {
-                episodePromises.push([proxiedGet(this.baseUrl + episodeUrl, {
-                    headers: {
-                        referer: url,
-                        origin: "https://anidb.net"
-                    }
-                }), Number.parseInt(episodeNumber)]);
+                const episodeNumberParsed = Number.parseInt(episodeNumber);
+                if (excludedEpisodes?.length && !excludedEpisodes.includes(episodeNumberParsed)) {
+                    episodePromises.push([proxiedGet(this.baseUrl + episodeUrl, {
+                        headers: {
+                            referer: url,
+                            origin: "https://anidb.net"
+                        }
+                    }), Number.parseInt(episodeNumber)]);
+                }
             }
         });
 

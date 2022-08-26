@@ -12,5 +12,5 @@ export default abstract class MetaProvider {
         this.cacheManager = cacheManager;
     }
 
-    abstract loadMeta(anime: Prisma.Anime): Promise<AnimeMeta>;
+    abstract loadMeta(anime: Prisma.Anime, excludedEpisodes?: number[]): Promise<AnimeMeta>;
 }

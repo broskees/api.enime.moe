@@ -44,6 +44,17 @@ export default class InformationModule implements OnApplicationBootstrap {
         await this.informationService.executeWorker("resync");
     }
 
+    @Cron(CronExpression.EVERY_HOUR)
+    async resyncAnimeReleasing() {
+        const releasingAnime = await this.databaseService.anime.findMany({
+            where: {
+                status: "RELEASING"
+            }
+        });
+
+        await this.informationService.executeWorker("resync", releasingAnime.map(anime => anime.id));
+    }
+
     // Every 10 minutes, we check anime that have don't have "enough episode" stored in the database (mostly the anime source sites update slower than Anilist because subs stuff) so we sync that part more frequently
     @Cron(CronExpression.EVERY_10_MINUTES)
     async checkForUpdatedEpisodes() {
