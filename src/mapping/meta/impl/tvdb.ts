@@ -139,9 +139,13 @@ export default class TvdbProvider extends MetaProvider {
                         if (title === "TBA" || title === "TBD" || title.startsWith("Episode")) title = undefined;
                     }
 
+                    let description = element.find("p").first().text()?.replaceAll("\n\n", "\n");
+
+                    if (!description?.length) description = undefined;
+
                     return {
                         title: title,
-                        description: element.find("p").first().text()?.replaceAll("\n\n", "\n")
+                        description: description
                     }
                 };
 
