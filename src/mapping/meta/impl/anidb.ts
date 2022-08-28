@@ -11,19 +11,10 @@ import { isNumeric } from '../../../helper/tool';
 export default class AnidbProvider extends MetaProvider {
     public override enabled = true;
     public override name = "AniDB";
-    private readonly parser: XMLParser;
     private readonly baseUrl = "https://anidb.net";
-
     private readonly animeUrl = this.baseUrl + "/anime/{anidbId}";
 
-    constructor(cacheManager: Cache) {
-        super(cacheManager);
-        this.parser = new XMLParser({
-            ignoreAttributes: false
-        });
-    }
-
-    async loadMeta(anime, excludedEpisodes): Promise<AnimeMeta> {
+    override async loadMeta(anime, excludedEpisodes): Promise<AnimeMeta> {
         // @ts-ignore
         const aniDbId = anime?.mappings?.anidb;
         if (!aniDbId) return undefined;

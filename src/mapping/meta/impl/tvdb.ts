@@ -18,42 +18,7 @@ export default class TvdbProvider extends MetaProvider {
     private readonly imdbBaseUrl = "https://www.imdb.com";
     private readonly imdbSeriesUrl = this.imdbBaseUrl + "/title/";
 
-    constructor(cacheManager: Cache) {
-        super(cacheManager);
-        this.parser = new XMLParser({
-            ignoreAttributes: false
-        });
-    }
-
-    async loadMapping(): Promise<object> {
-        let cachedMapping = await this.cacheManager.get<string>("tvdb-mapping");
-        if (cachedMapping) return JSON.parse(cachedMapping);
-        else {
-            const { data: rawMappings } = await axios.get(this.tvdbMappingEndpoint);
-            const mappings = this.parser.parse(rawMappings)["anime-list"]["anime"];
-
-            const parsedMapping = {};
-            for (let mapping of mappings) {
-                const aniDbId = mapping["@_anidbid"], tvdbId = mapping["@_tvdbid"], tvdbSeason = mapping["@_defaulttvdbseason"], episodeOffset = mapping["@_episodeoffset"], imdbId = mapping["@_imdbid"];
-
-                if (!aniDbId || !tvdbId || !tvdbSeason || tvdbId === "unknown" || tvdbId === "hentai" || tvdbId === "OVA") continue;
-
-                parsedMapping[aniDbId] = {
-                    id: tvdbId,
-                    season: tvdbSeason,
-                    offset: episodeOffset ? Number.parseInt(episodeOffset) : 0,
-                    imdb: imdbId
-                };
-            }
-
-            await this.cacheManager.set<string>("tvdb-mapping", JSON.stringify(parsedMapping), { ttl: 60 * 60 * 5 });
-            return parsedMapping;
-        }
-    }
-
-    async loadMeta(anime, excludedEpisodes): Promise<AnimeMeta> {
-        const parsedMapping = await this.loadMapping();
-
+    override async loadMeta(anime, excludedEpisodes, parsedMapping): Promise<AnimeMeta> {
         // @ts-ignore
         const aniDbId = anime?.mappings?.anidb;
 
