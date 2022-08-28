@@ -138,7 +138,6 @@ export default class TvdbProvider extends MetaProvider {
 
                 let $$ = cheerio.load(episodeHtml);
 
-                console.log(episodeHtml)
                 const translation = (lang) => {
                     const element = $$(`#translations > .change_translation_text[data-language="${lang}"]`).first();
                     if (!element) return undefined;
