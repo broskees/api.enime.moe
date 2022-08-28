@@ -161,7 +161,7 @@ export default class Anime {
         type: Episode,
         isArray: true
     })
-    episodes: Episode[];
+    episodes?: Episode[];
 
     @ApiProperty({
         description: "Anime relations",
