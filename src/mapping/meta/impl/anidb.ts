@@ -77,8 +77,12 @@ export default class AnidbProvider extends MetaProvider {
             let airedAt = undefined;
             if (airedAtRaw) airedAt = dayjs(airedAtRaw).toDate();
 
-            const englishTitle = $$("#tab_2_pane > div > table > tbody > tr.g_odd.romaji > td > span")?.text();
-            const japaneseTitle = $$("#tab_2_pane > div > table > tbody > tr.g_odd.official.verified.no > td > label")?.text();
+            let englishTitle = $$("#tab_2_pane > div > table > tbody > tr.g_odd.romaji > td > span")?.text();
+            if (englishTitle) {
+                if (englishTitle === "TBA" || englishTitle === "TBD" || englishTitle.startsWith("Episode")) englishTitle = undefined;
+            }
+
+            let japaneseTitle = $$("#tab_2_pane > div > table > tbody > tr.g_odd.official.verified.no > td > label")?.text();
 
             let description = $$("[itemprop='description']")?.text()?.replace(/(S|s)ource: (.*)/igm, "")?.replaceAll("\n", "")?.replaceAll("\t", "");
 
