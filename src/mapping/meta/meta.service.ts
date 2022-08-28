@@ -28,7 +28,7 @@ export default class MetaService {
         if (anime.format === "MOVIE") return;
 
         const updatedEpisodeInfo = [];
-        let excludedEpisodes = anime.episodes.filter(e => e.titleVariations && e.title && e.description && e.airedAt).map(e => e.number);
+        let excludedEpisodes = anime.episodes.filter(e => e.titleVariations && e.title && e.description && e.airedAt && e.image).map(e => e.number);
 
         const load = async (provider, anime, excluded = undefined) => {
             const animeMeta = await provider.loadMeta(anime, excluded);
@@ -38,6 +38,8 @@ export default class MetaService {
             for (let episodeMeta of animeMeta.episodes) {
                 if (!episodeMeta) continue;
 
+                const validMeta = Object.fromEntries(Object.entries(episodeMeta).filter(([_, v]) => !!v));
+
                 updatedEpisodeInfo.push(await this.databaseService.episode.update({
                     where: {
                         animeId_number: {
@@ -46,7 +48,7 @@ export default class MetaService {
                         }
                     },
                     data: {
-                        ...episodeMeta
+                        ...validMeta
                     }
                 }));
             }

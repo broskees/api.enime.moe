@@ -1,7 +1,7 @@
 import MetaProvider from '../meta.provider';
 import Prisma from '@prisma/client';
 import { AnimeMeta, EpisodeMeta } from '../../../types/global';
-import axios from '../../../helper/request';
+import axios, { proxiedGet, USER_AGENT } from '../../../helper/request';
 import { Cache } from 'cache-manager';
 import { XMLParser } from 'fast-xml-parser';
 import * as cheerio from 'cheerio';
@@ -80,7 +80,12 @@ export default class TvdbProvider extends MetaProvider {
 
             if (!url) return;
 
-            const { data: seasonEntryHtml, status: seasonEntryStatus } = await axios.get(url, { validateStatus: () => true });
+            const { data: seasonEntryHtml, status: seasonEntryStatus } = await axios.get(url, {
+                validateStatus: () => true,
+                headers: {
+                    "user-agent": USER_AGENT
+                }
+            });
             if (seasonEntryStatus === 404) return;
 
             $ = cheerio.load(seasonEntryHtml);
@@ -123,11 +128,17 @@ export default class TvdbProvider extends MetaProvider {
                 const episode = episodes.find(e => e.number - tvdb.offset === episodeDb.number);
                 if (!episode) continue;
 
-                const { data: episodeHtml, status } = await axios.get(this.tvdbBaseUrl + episode.url, { validateStatus: () => true });
+                const { data: episodeHtml, status } = await proxiedGet(this.tvdbBaseUrl + episode.url, {
+                    validateStatus: () => true,
+                    headers: {
+                        "user-agent": USER_AGENT
+                    }
+                });
                 if (status === 404) continue;
 
                 let $$ = cheerio.load(episodeHtml);
 
+                console.log(episodeHtml)
                 const translation = (lang) => {
                     const element = $$(`#translations > .change_translation_text[data-language="${lang}"]`).first();
                     if (!element) return undefined;
@@ -151,7 +162,9 @@ export default class TvdbProvider extends MetaProvider {
                 const japaneseTranslation = translation("jpn");
                 const englishTranslation = translation("eng");
                 const thumbnail = $$(".thumbnail > img")?.first()?.attr("src");
-                const airingTime = $$('a[href^="/on-today/"]')?.first()?.text();
+                let airingTime = $$('a[href^="/on-today/"]')?.first()?.text();
+
+                if (!airingTime?.length) airingTime = undefined;
 
                 episodeMetas.push({
                     image: thumbnail,
@@ -160,7 +173,7 @@ export default class TvdbProvider extends MetaProvider {
                         english: englishTranslation.title
                     },
                     description: englishTranslation.description,
-                    airedAt: (!episodeDb.airedAt && airingTime) ? dayjs(airingTime).toDate() : undefined,
+                    airedAt: airingTime ? dayjs(airingTime).toDate() : undefined,
                     title: englishTranslation.title as string,
                     number: episodeDb.number
                 })

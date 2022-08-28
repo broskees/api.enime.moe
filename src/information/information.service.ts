@@ -13,8 +13,8 @@ import path from 'path';
 import MappingService from '../mapping/mapping.service';
 import Prisma from '@prisma/client';
 import ProxyService from '../proxy/proxy.service';
-import fetch from 'node-fetch';
 import MetaService from '../mapping/meta/meta.service';
+import Piscina from 'piscina';
 
 @Injectable()
 export default class InformationService implements OnApplicationBootstrap {
@@ -22,6 +22,7 @@ export default class InformationService implements OnApplicationBootstrap {
     private readonly anilistBaseEndpoint = "https://graphql.anilist.co";
     private readonly seasons = ["WINTER", "SPRING", "SUMMER", "FALL"];
     private informationWorker;
+    private piscina: Piscina;
 
     constructor(@Inject("DATABASE") private readonly databaseService: DatabaseService, private readonly proxyService: ProxyService, private readonly mappingService: MappingService, private readonly metaService: MetaService, @InjectQueue("scrape") private readonly queue: Queue) {
         this.client = new GraphQLClient(this.anilistBaseEndpoint, {

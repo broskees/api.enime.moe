@@ -67,6 +67,7 @@
     "nestjs-throttler-storage-redis": "^0.1.20",
     "node-fetch": "2.6.7",
     "node-fetch-retry": "^2.0.0",
+    "piscina": "^3.2.0",
     "prisma-pagination": "^0.2.3",
     "reconnecting-websocket": "^4.4.0",
     "reflect-metadata": "^0.1.13",
