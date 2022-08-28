@@ -1,6 +1,8 @@
 # Enime API
 Enime API is an open source API service for developers to access anime info (as well as their video sources)
 
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/nadeshikon)
+
 ## Installation
 
 ### Prerequisites
