@@ -1,5 +1,5 @@
 import { SkipThrottle } from '@nestjs/throttler';
-import { CacheTTL, Controller, Get, NotFoundException, Param } from '@nestjs/common';
+import { CacheTTL, Controller, Get, NotFoundException, Param, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import Episode from '../entity/episode.entity';
 import EpisodeService from '../episode/episode.service';
@@ -23,6 +23,7 @@ export default class ViewController {
         description: "The episode cannot be found within the database for given ID"
     })
     @CacheTTL(300)
+    @UsePipes(new ValidationPipe({ transform: true }))
     async getEpisode(@Param("animeIdentifier") animeIdentifier: string, @Param("episodeNumber") episodeNumber: number) {
         return this.episodeService.getEpisodeByAnimeIdentifier(animeIdentifier, episodeNumber);
     }

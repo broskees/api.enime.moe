@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import DatabaseService from '../database/database.service';
 
 @Injectable()
@@ -7,6 +7,8 @@ export default class EpisodeService {
     }
 
     async getEpisodeByAnimeIdentifier(animeId: string, episodeNumber: number) {
+        if (Number.isNaN(episodeNumber)) throw new BadRequestException("The requested episode number has to be valid.");
+
         const episode = await this.databaseService.episode.findFirst({
             where: {
                 number: Number(episodeNumber),

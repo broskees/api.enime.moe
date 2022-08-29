@@ -389,14 +389,40 @@ export default class InformationService implements OnApplicationBootstrap {
                                     }
                                 })]);
                             } else {
-                                return Promise.all([false, this.databaseService.anime.update({
+                                const promises: [boolean, any, any] | [boolean, any] = [false, this.databaseService.anime.update({
                                     where: {
                                         anilistId: anime.id
                                     },
                                     data: {
                                         ...animeDbObject
                                     }
-                                })]);
+                                })];
+
+                                if (animeDb.status === "RELEASING" && animeDbObject.currentEpisode > animeDb.currentEpisode) {
+                                    // @ts-ignore
+                                    promises.push(this.databaseService.episode.upsert({
+                                        where: {
+                                            animeId_number: {
+                                                animeId: animeDb.id,
+                                                number: animeDbObject.currentEpisode
+                                            }
+                                        },
+                                        create: {
+                                            anime: {
+                                                connect: {
+                                                    id: animeDb.id
+                                                }
+                                            },
+                                            airedAt: animeDb.next,
+                                            number: animeDbObject.currentEpisode
+                                        },
+                                        update: {
+                                            airedAt: animeDb.next
+                                        }
+                                    }))
+                                }
+
+                                return Promise.all(promises);
                             }
                         }).then(([created, animeDb]) => {
                             return {
