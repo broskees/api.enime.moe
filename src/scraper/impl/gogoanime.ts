@@ -5,7 +5,6 @@ import fetch from 'node-fetch';
 import * as similarity from 'string-similarity';
 import { deepMatch } from '../../helper/match';
 import GogoCDN from '../../extractor/impl/gogocdn';
-import { sleep } from '../../helper/tool';
 
 // Credit to https://github.com/riimuru/gogoanime/blob/46edf3de166b7c5152919d6ac12ab6f55d9ed35b/lib/helpers/extractors/goload.js
 export default class GogoanimeScraper extends Scraper {

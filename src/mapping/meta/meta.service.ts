@@ -78,7 +78,7 @@ export default class MetaService implements OnModuleInit {
             if (!animeMeta) return [];
 
             for (let episodeMeta of animeMeta.episodes) {
-                if (!episodeMeta || episodeMeta.number > anime.currentEpisode) continue;
+                if (!episodeMeta || Number.isNaN(episodeMeta.number) || episodeMeta.number > anime.currentEpisode) continue;
                 let episodeDb = await this.databaseService.episode.findUnique({
                     where: {
                         animeId_number: {
