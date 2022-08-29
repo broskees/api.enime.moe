@@ -21,7 +21,6 @@ export default class TvdbProvider extends MetaProvider {
     override async loadMeta(anime, excludedEpisodes, parsedMapping): Promise<AnimeMeta> {
         // @ts-ignore
         const aniDbId = anime?.mappings?.anidb;
-
         if (!aniDbId) return undefined;
 
         const tvdb = parsedMapping[String(aniDbId)];

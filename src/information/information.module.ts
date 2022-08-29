@@ -73,7 +73,7 @@ export default class InformationModule implements OnApplicationBootstrap {
     }
 
     // Every 10 minutes, we check anime that have don't have "enough episode" stored in the database (mostly the anime source sites update slower than Anilist because subs stuff) so we sync that part more frequently
-    @Cron(CronExpression.EVERY_10_MINUTES)
+    @Cron(CronExpression.EVERY_HOUR)
     async checkForUpdatedEpisodes() {
         await this.updateOnCondition({
             status: {
@@ -231,6 +231,5 @@ export default class InformationModule implements OnApplicationBootstrap {
     }
 
     async onApplicationBootstrap() {
-        this.resyncAnimeReleasing()
     }
 }

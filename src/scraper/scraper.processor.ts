@@ -100,18 +100,21 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                     let excludedNumbers = [];
 
                     const episodesWithSourceTransactions = [];
-                    for (let i = 0; i <= anime.currentEpisode; i++) {
-                        episodesWithSourceTransactions.push(databaseService.episode.findUnique({
-                            where: {
-                                animeId_number: {
-                                    animeId: anime.id,
-                                    number: i
+
+                    if (!Number.isNaN(anime.currentEpisode)) {
+                        for (let i = 0; i <= anime.currentEpisode; i++) {
+                            episodesWithSourceTransactions.push(databaseService.episode.findUnique({
+                                where: {
+                                    animeId_number: {
+                                        animeId: anime.id,
+                                        number: i
+                                    }
+                                },
+                                include: {
+                                    sources: true
                                 }
-                            },
-                            include: {
-                                sources: true
-                            }
-                        }));
+                            }));
+                        }
                     }
 
                     const episodesWithSource = await databaseService.$transaction(episodesWithSourceTransactions);

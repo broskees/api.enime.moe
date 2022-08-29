@@ -70,34 +70,33 @@ export default class MetaService implements OnModuleInit {
 
         if (anime.format === "MOVIE") return;
 
-        const updatedEpisodeInfo = [];
+        const episodeInfos = {};
         let excludedEpisodes = anime.episodes.filter(e => e.titleVariations && e.title && e.description && e.airedAt && e.image).map(e => e.number);
 
         const load = async (provider, anime, excluded = undefined) => {
-            const updatedEpisodeInfo = [];
-
             const animeMeta = await this.piscina.run({ name: provider.name, anime: anime, excluded: excluded, mapping: parsedMapping }, { name: "loadMeta" });
             if (!animeMeta) return [];
 
             for (let episodeMeta of animeMeta.episodes) {
-                if (!episodeMeta) continue;
-
-                const validMeta = Object.fromEntries(Object.entries(episodeMeta).filter(([_, v]) => !!v));
-
-                updatedEpisodeInfo.push(this.databaseService.episode.update({
+                if (!episodeMeta || episodeMeta.number > anime.currentEpisode) continue;
+                let episodeDb = await this.databaseService.episode.findUnique({
                     where: {
                         animeId_number: {
                             animeId: anime.id,
                             number: episodeMeta.number
                         }
-                    },
-                    data: {
-                        ...validMeta
                     }
-                }))
-            }
+                });
 
-            return updatedEpisodeInfo;
+                if (!episodeDb) continue;
+
+                const validMeta = Object.fromEntries(Object.entries(episodeMeta).filter(([_, v]) => !!v));
+
+                episodeInfos[episodeMeta.number] = {
+                    ...(episodeInfos[episodeMeta.number] || {}),
+                    ...validMeta
+                }
+            }
         }
 
         let res = false;
@@ -105,20 +104,35 @@ export default class MetaService implements OnModuleInit {
         for (let provider of this.providers) {
             if (!provider.enabled) continue;
 
-            await this.databaseService.$transaction(await load(provider, anime, excludedEpisodes));
+            await load(provider, anime, excludedEpisodes);
         }
 
         if (useBackup) {
-            excludedEpisodes = updatedEpisodeInfo.filter(e => e.titleVariations && e.title && e.description && e.airedAt).map(e => e.number);
+            // @ts-ignore
+            let excludedEpisodesBackup = Object.values(episodeInfos).filter(e => e.titleVariations && e.title && e.description && e.airedAt).map(e => e.number);
 
-            if (anime.episodes.length && (!res || (excludedEpisodes.length !== anime.episodes.length))) { // Anidb does not provide episode image, we should not bother it for this
+            if (anime.episodes.length && (!res || ((excludedEpisodes.length + excludedEpisodesBackup.length) !== anime.episodes.length))) { // Anidb does not provide episode image, we should not bother it for this
                 for (let provider of this.backupProviders) {
                     if (!provider.enabled) continue;
 
-                    await this.databaseService.$transaction(await load(provider, anime, excludedEpisodes));
+                    await load(provider, anime, [...excludedEpisodesBackup, ...excludedEpisodes]);
                 }
             }
         }
+
+        await this.databaseService.$transaction(Object.values(episodeInfos).map(episodeInfo => this.databaseService.episode.update({
+            where: {
+                animeId_number: {
+                    animeId: anime.id,
+                    // @ts-ignore
+                    number: episodeInfo.number
+                }
+            },
+            data: {
+                // @ts-ignore
+                ...episodeInfo
+            }
+        })))
     }
 
     async onModuleInit() {
