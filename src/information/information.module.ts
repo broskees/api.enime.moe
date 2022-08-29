@@ -16,9 +16,10 @@ import ProxyModule from '../proxy/proxy.module';
 import DatabaseModule from '../database/database.module';
 import slugify from 'slugify';
 import { sleep } from '../helper/tool';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
-    imports: [ProxyModule, BullModule.registerQueue({
+    imports: [EventEmitterModule.forRoot({ global: false }), ProxyModule, BullModule.registerQueue({
         name: "scrape"
     }), MappingModule, DatabaseModule],
     providers: [InformationService, ProxyService, ScraperService, DatabaseService],
@@ -29,30 +30,46 @@ export default class InformationModule implements OnApplicationBootstrap {
         if (!process.env.TESTING) dayjs.extend(utc);
     }
 
-    @Cron(CronExpression.EVERY_5_MINUTES)
+    @Cron(CronExpression.EVERY_30_MINUTES)
     async updateAnime() {
         Logger.debug("Now we start refetching currently releasing anime from Anilist");
         performance.mark("information-fetch-start");
 
-        await this.informationService.initializeWorker();
+        this.informationService.refetchAnime().then(() => {
+            performance.mark("information-fetch-end");
 
-        await this.informationService.executeWorker("refetch");
+            Logger.debug(`Scheduled refetch finished, spent ${performance.measure("information-fetch", "information-fetch-start", "information-fetch-end").duration.toFixed(2)}ms`)
+        });
     }
 
     @Cron(CronExpression.EVERY_12_HOURS)
     async resyncAnime() {
-        await this.informationService.executeWorker("resync");
+        Logger.debug("Now we start scheduled resync for all anime");
+        performance.mark("resync-start");
+
+        this.informationService.resyncAnime().then(() => {
+            performance.mark("resync-end");
+
+            Logger.debug(`Scheduled resync finished, spent ${performance.measure("resync", "resync-start", "resync-end").duration.toFixed(2)}ms`);
+        });
     }
 
     @Cron(CronExpression.EVERY_HOUR)
     async resyncAnimeReleasing() {
+        Logger.debug("Now we start scheduled resync for releasing anime");
+        performance.mark("resync-start-releasing");
+
         const releasingAnime = await this.databaseService.anime.findMany({
             where: {
                 status: "RELEASING"
             }
         });
 
-        await this.informationService.executeWorker("resync", releasingAnime.map(anime => anime.id));
+        this.informationService.resyncAnime(releasingAnime.map(anime => anime.id)).then(() => {
+            performance.mark("resync-end-releasing");
+
+            Logger.debug(`Scheduled resync finished, spent ${performance.measure("resync-releasing", "resync-start-releasing", "resync-end-releasing").duration.toFixed(2)}ms`);
+        });
     }
 
     // Every 10 minutes, we check anime that have don't have "enough episode" stored in the database (mostly the anime source sites update slower than Anilist because subs stuff) so we sync that part more frequently
@@ -76,7 +93,7 @@ export default class InformationModule implements OnApplicationBootstrap {
         })
     }
 
-    @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+    @Cron(CronExpression.EVERY_WEEK)
     async checkForUpdatedEpisodesForFinishedAnime() {
         await this.updateOnCondition({
             status: {
@@ -188,7 +205,7 @@ export default class InformationModule implements OnApplicationBootstrap {
             }
         });
 
-        await this.informationService.executeWorker("fetch-relation", ids.map(id => id.id));
+        await Promise.all(ids.map(id => this.informationService.fetchRelations(id.id)));
     }
 
     @Cron(CronExpression.EVERY_WEEK)
@@ -214,5 +231,6 @@ export default class InformationModule implements OnApplicationBootstrap {
     }
 
     async onApplicationBootstrap() {
+        this.resyncAnimeReleasing()
     }
 }

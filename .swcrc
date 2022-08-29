@@ -1,14 +1,14 @@
 {
   "sourceMaps": false,
   "module": {
-    "type": "commonjs",
-    "strict": true
+    "type": "commonjs"
   },
   "jsc": {
     "target": "es2020",
     "parser": {
       "syntax": "typescript",
-      "decorators": true
+      "decorators": true,
+      "dynamicImport": true
     },
     "transform": {
       "legacyDecorator": true,

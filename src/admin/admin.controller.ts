@@ -21,7 +21,7 @@ export default class AdminController {
     @Put("/anime/batch")
     @NoCache()
     async fetchAnimeBatch(@Body(new ParseArrayPipe({ items: Number })) animeIds: number[]) {
-        await this.informationService.executeWorker("fetch-specific-batch", animeIds);
+        await this.informationService.fetchAnimeByAnilistIDBatch(animeIds);
 
         return "Done";
     }
@@ -33,7 +33,7 @@ export default class AdminController {
             animeId = parseInt(animeId);
         }
 
-        await this.informationService.executeWorker("fetch-specific", animeId);
+        await this.informationService.fetchAnimeByAnilistID(animeId);
 
         return "Done";
     }
@@ -49,11 +49,14 @@ export default class AdminController {
     @Get("/fetch-relation")
     @NoCache()
     async fetchRelationAll(@Param("id") id: string) {
-        await this.informationService.executeWorker("fetch-relation", (await this.databaseService.anime.findMany({
+        await this.informationService.fetchRelations((await this.databaseService.anime.findUnique({
+            where: {
+                id: id
+            },
             select: {
                 id: true
             }
-        })).map(a => a.id));
+        })).id);
 
         return "Done";
     }

@@ -1,30 +1,28 @@
-import { Inject, Injectable, Logger, NotFoundException, OnApplicationBootstrap, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, OnApplicationBootstrap } from '@nestjs/common';
 import { GraphQLClient } from 'graphql-request';
 import utc from 'dayjs/plugin/utc';
 import dayjs from 'dayjs';
-import { AIRING_ANIME, SPECIFIC_ANIME } from './anilist-queries';
 import DatabaseService from '../database/database.service';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import slugify from 'slugify';
 import cuid from 'cuid';
-import { fork } from 'child_process';
-import path from 'path';
+import { resolve } from 'path';
 import MappingService from '../mapping/mapping.service';
 import Prisma from '@prisma/client';
 import ProxyService from '../proxy/proxy.service';
 import MetaService from '../mapping/meta/meta.service';
 import Piscina from 'piscina';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import AnimeRefetchEvent from '../events/impl/anime.refetch.event';
 
 @Injectable()
 export default class InformationService implements OnApplicationBootstrap {
     private readonly client: GraphQLClient;
     private readonly anilistBaseEndpoint = "https://graphql.anilist.co";
-    private readonly seasons = ["WINTER", "SPRING", "SUMMER", "FALL"];
-    private informationWorker;
     private piscina: Piscina;
 
-    constructor(@Inject("DATABASE") private readonly databaseService: DatabaseService, private readonly proxyService: ProxyService, private readonly mappingService: MappingService, private readonly metaService: MetaService, @InjectQueue("scrape") private readonly queue: Queue) {
+    constructor(private eventEmitter: EventEmitter2, @Inject("DATABASE") private readonly databaseService: DatabaseService, private readonly proxyService: ProxyService, private readonly mappingService: MappingService, private readonly metaService: MetaService, @InjectQueue("scrape") private readonly queue: Queue) {
         this.client = new GraphQLClient(this.anilistBaseEndpoint, {
             headers: {
                 "Content-Type": "application/json",
@@ -33,60 +31,30 @@ export default class InformationService implements OnApplicationBootstrap {
         });
 
         if (!process.env.TESTING) dayjs.extend(utc);
-    }
 
-    async onApplicationBootstrap() {
-        await this.initializeWorker();
-    }
-
-    async executeWorker(event, data = undefined) {
-        if (!this.informationWorker) throw new NotFoundException("Information worker not available, please wait for it to initialize");
-
-        await this.informationWorker.send({
-            event: event,
-            data: data
+        this.piscina = new Piscina({
+            filename: resolve(__dirname, "information.worker.js")
         });
     }
 
-    async initializeWorker() {
-        if (!this.informationWorker) {
-            this.informationWorker = fork(path.resolve(__dirname, "./information.worker"));
+    async onApplicationBootstrap() {
+    }
 
-            this.informationWorker.on("message", async ({ event, data }) => {
-                if (event === "refetch") {
-                    const { created, updated } = data;
+    @OnEvent("anime.refetch", { async: true })
+    async handleAnimeRefetchEvent(event: AnimeRefetchEvent) {
+        if (event.animeIds?.length) {
+            await this.queue.add( {
+                animeIds: event.animeIds,
+                infoOnly: false
+            }, {
+                priority: event.specific ? 1 : 4,
+                removeOnComplete: true
+            });
+        }
 
-                    performance.mark("information-fetch-end");
-
-                    const animeIds = [...created, ...updated];
-                    Logger.debug(`Refetching completed, took ${performance.measure("information-fetch", "information-fetch-start", "information-fetch-end").duration.toFixed(2)}ms, created ${created.length} anime entries, updated ${updated.length} anime entries.`);
-
-                    await this.queue.add( { // Higher priority than the daily anime sync
-                        animeIds: animeIds,
-                        infoOnly: false
-                    }, {
-                        priority: 4,
-                        removeOnComplete: true
-                    });
-
-                    await this.executeWorker("fetch-relation", animeIds);
-
-                    if (created.length) {
-                        await this.executeWorker("resync", created);
-                    }
-                } else if (event === "fetch-specific") {
-                    const updatedAnimeId = data;
-
-                    if (updatedAnimeId) {
-                        await this.queue.add( { // Highest priority since this is manual request
-                            animeIds: [updatedAnimeId],
-                            infoOnly: false
-                        }, {
-                            priority: 1,
-                            removeOnComplete: true
-                        });
-                    }
-                }
+        if (event.createdAnimeIds?.length) {
+            this.resyncAnime(event.createdAnimeIds).then(() => {
+                Logger.debug("Resync-ed newly created anime(s)");
             });
         }
     }
@@ -108,99 +76,91 @@ export default class InformationService implements OnApplicationBootstrap {
 
         if (!anime) return;
 
-        const requestVariables = {
-            id: anime.anilistId
-        };
+        const edges = await this.piscina.run({
+            anime: anime,
+            preloaded: preloaded
+        }, { name: "fetchAnilistEdges" });
 
-        let animeList;
-        if (!preloaded) {
-           animeList = await this.client.request(SPECIFIC_ANIME, requestVariables);
-        }
+        const relations = await Promise.all(edges.filter(edge => edge.node.id !== anime.anilistId && edge.node.type === "ANIME" && Prisma.RelationType[edge.relationType]).map(edge => {
+            return new Promise((resolve) => {
+                this.fetchAnimeByAnilistID(edge.node.id)
+                    .then(relatedAnimeId => {
+                        resolve({
+                            type: edge.relationType,
+                            id: relatedAnimeId
+                        })
+                    })
+                    .catch(e => {
+                        Logger.error(e)
+                    })
+            })
+        }));
 
-        const anilistAnime = preloaded || animeList?.Page?.media[0];
+        return await this.databaseService.$transaction(async (prisma) => {
+            const internalParsedRelations = [];
 
-        const edges = anilistAnime.relations.edges;
-
-        const relations = [];
-
-        for (let edge of edges) {
-            try {
-                if (edge.node.type !== "ANIME" || !Prisma.RelationType[edge.relationType]) continue;
-                if (edge.node.id === anime.anilistId) continue; // ???? An anime is related to itself
-                const relatedAnimeId = await this.fetchAnimeByAnilistID(edge.node.id);
-
-                relations.push({
-                    type: edge.relationType,
-                    id: relatedAnimeId
+            for (let r of relations) {
+                let forwardRelation = await prisma.relation.findUnique({
+                    where: {
+                        type_animeId: {
+                            animeId: r.id,
+                            type: r.type
+                        }
+                    }
                 });
-            } catch (e) {
-                Logger.error(e);
-            }
-        }
 
-        const parsedRelations = [];
-
-        for (let r of relations) {
-            let forwardRelation = await this.databaseService.relation.findUnique({
-                where: {
-                    type_animeId: {
-                        animeId: r.id,
-                        type: r.type
-                    }
-                }
-            });
-
-            if (!forwardRelation) {
-                forwardRelation = await this.databaseService.relation.create({
-                    data: {
-                        animeId: r.id,
-                        type: r.type,
-                        linked: {
-                            connect: {
-                                id: anime.id
-                            }
-                        }
-                    }
-                })
-            } else {
-                forwardRelation = await this.databaseService.relation.update({
-                    where: {
-                        id: forwardRelation.id
-                    },
-                    data: {
-                        linked: {
-                            connect: {
-                                id: anime.id
-                            }
-                        }
-                    }
-                })
-            }
-
-            try { // Ignore Prisma's complain about "unique constraint violation", there is no way this can be non-unique I'm not sure why Prisma is complaining so
-                await this.databaseService.anime.update({
-                    where: {
-                        id: anime.id
-                    },
-                    data: {
-                        linkedRelations: {
-                            connect: {
-                                id: forwardRelation.id,
-                                type_animeId: {
-                                    animeId: forwardRelation.animeId,
-                                    type: forwardRelation.type
+                if (!forwardRelation) {
+                    forwardRelation = await prisma.relation.create({
+                        data: {
+                            animeId: r.id,
+                            type: r.type,
+                            linked: {
+                                connect: {
+                                    id: anime.id
                                 }
                             }
                         }
-                    }
-                })
-            } catch (e) {
+                    })
+                } else {
+                    forwardRelation = await prisma.relation.update({
+                        where: {
+                            id: forwardRelation.id
+                        },
+                        data: {
+                            linked: {
+                                connect: {
+                                    id: anime.id
+                                }
+                            }
+                        }
+                    })
+                }
 
+                try { // Ignore Prisma's complain about "unique constraint violation", there is no way this can be non-unique I'm not sure why Prisma is complaining so
+                    prisma.anime.update({
+                        where: {
+                            id: anime.id
+                        },
+                        data: {
+                            linkedRelations: {
+                                connect: {
+                                    id: forwardRelation.id,
+                                    type_animeId: {
+                                        animeId: forwardRelation.animeId,
+                                        type: forwardRelation.type
+                                    }
+                                }
+                            }
+                        }
+                    })
+                } catch (e) {
+
+                }
+                internalParsedRelations.push(forwardRelation);
             }
-            parsedRelations.push(forwardRelation);
-        }
 
-        return relations;
+            return internalParsedRelations;
+        });
     }
 
     async resyncAnime(ids: string[] | undefined = undefined) {
@@ -224,42 +184,49 @@ export default class InformationService implements OnApplicationBootstrap {
                     id: true,
                     anilistId: true
                 }
-            })))
+            })));
         }
 
-        for (let anime of animeList) {
-            // @ts-ignore
-            let mapping = mappings?.find(mapping => mapping?.anilist_id == anime.anilistId);
-            if (!mapping) continue;
+        const res = await Promise.allSettled(animeList.map(anime => {
+            return new Promise<number>((resolve, reject) => {
+                // @ts-ignore
+                let mapping = mappings?.find(mapping => mapping?.anilist_id == anime.anilistId);
+                if (!mapping) reject(0);
 
-            const mappingObject: object = {};
+                const mappingObject: object = {};
 
-            for (let k in mapping) {
-                if (k === "type") continue;
+                for (let k in mapping) {
+                    if (k === "type") continue;
 
-                mappingObject[k.replace("_id", "")] = mapping[k];
-            }
-
-            let dbAnime = await this.databaseService.anime.update({
-                where: {
-                    id: anime.id
-                },
-                data: {
-                    mappings: {
-                        ...mappingObject
-                    }
-                },
-                include: {
-                    episodes: true
+                    mappingObject[k.replace("_id", "")] = mapping[k];
                 }
-            });
 
-            if (dbAnime.episodes.some(ep => !ep.airedAt || !ep.title || !ep.titleVariations || !ep.image || !ep.description)) await this.metaService.synchronize(dbAnime);
-        }
+                this.databaseService.anime.update({
+                    where: {
+                        id: anime.id
+                    },
+                    data: {
+                        mappings: {
+                            ...mappingObject
+                        }
+                    },
+                    include: {
+                        episodes: true
+                    }
+                }).then(dbAnime => {
+                    if (dbAnime.episodes.some(ep => !ep.airedAt || !ep.title || !ep.titleVariations || !ep.image || !ep.description)) this.metaService.synchronize(dbAnime).then(() => resolve(0));
+                    else resolve(0)
+                }).catch(err => {
+                    Logger.error(err);
+                    reject(err)
+                })
+            })
+        }));
 
+        return res;
     }
 
-    async convertToDbAnime(anilistAnime) {
+    async convertToDbAnime(anilistAnime, includeMapping = true) {
         let nextEpisode = anilistAnime.nextAiringEpisode, currentEpisode = 0;
         if (nextEpisode) {
             currentEpisode = nextEpisode.episode - 1;
@@ -270,16 +237,20 @@ export default class InformationService implements OnApplicationBootstrap {
             }
         }
 
-        const mappings = await this.mappingService.getMappings() as unknown as any[];
-        let mapping = mappings?.find(mapping => mapping?.anilist_id == anilistAnime.id);
+        let mappingObject = undefined;
 
-        const mappingObject: object = {};
+        if (includeMapping) {
+            mappingObject = {};
 
-        if (mapping) {
-            for (let k in mapping) {
-                if (k === "type") continue;
+            const mappings = await this.mappingService.getMappings() as unknown as any[];
+            let mapping = mappings?.find(mapping => mapping?.anilist_id == anilistAnime.id);
 
-                mappingObject[k.replace("_id", "")] = mapping[k];
+            if (mapping) {
+                for (let k in mapping) {
+                    if (k === "type") continue;
+
+                    mappingObject[k.replace("_id", "")] = mapping[k];
+                }
             }
         }
 
@@ -302,7 +273,9 @@ export default class InformationService implements OnApplicationBootstrap {
             year: anilistAnime.seasonYear,
             format: anilistAnime.format || "UNKNOWN",
             next: nextEpisode,
-            mappings: mappingObject,
+            ...(!!mappingObject && {
+                mappings: mappingObject
+            }),
             genre: {
                 connectOrCreate: anilistAnime.genres.map(genre => {
                     return {
@@ -316,13 +289,46 @@ export default class InformationService implements OnApplicationBootstrap {
         };
     }
 
+    async fetchAnimeByAnilistIDBatch(anilistIds) {
+        anilistIds = anilistIds.filter(async anilistId => await this.databaseService.anime.findUnique({
+            where: {
+                anilistId: anilistId
+            }
+        }));
+
+        const anilistAnimeList = await Promise.all(anilistIds.map(anilistId => {
+            return new Promise(resolve => {
+                this.piscina.run({
+                    anilistId: anilistId
+                }, { name: "fetchAnilistAnime" })
+                    .then(anilistAnime => resolve(anilistAnime))
+            })
+        }));
+
+        for (let anilistAnime of anilistAnimeList) {
+            if (!anilistAnime) throw new NotFoundException("Such anime cannot be found from Anilist");
+
+            const animeDbObject = await this.convertToDbAnime(anilistAnime);
+
+            let animeDb = await this.databaseService.anime.upsert({
+                where: {
+                    anilistId: animeDbObject.anilistId
+                },
+                create: {
+                    id: cuid(),
+                    ...animeDbObject
+                },
+                update: {
+                    ...animeDbObject
+                }
+            });
+
+            await this.fetchRelations(animeDb.id, anilistAnime);
+        }
+    }
+
     async fetchAnimeByAnilistID(anilistId, force = false) {
         let animeDbUpdateId = undefined;
-
-        const requestVariables = {
-            id: anilistId
-        };
-
 
         let animeDb = await this.databaseService.anime.findUnique({
             where: {
@@ -331,13 +337,13 @@ export default class InformationService implements OnApplicationBootstrap {
         });
 
         if (!animeDb || force) {
-            let animeList = await this.client.request(SPECIFIC_ANIME, requestVariables);
-
-            const anilistAnime = animeList?.Page?.media[0];
+            const anilistAnime = await this.piscina.run({
+                anilistId: anilistId
+            }, { name: "fetchAnilistAnime" });
 
             if (!anilistAnime) throw new NotFoundException("Such anime cannot be found from Anilist");
 
-            const animeDbObject = await this.convertToDbAnime(anilistAnime);
+            const animeDbObject = await this.convertToDbAnime(anilistAnime, false);
 
             let id = animeDb ? animeDb.id : cuid();
 
@@ -363,100 +369,62 @@ export default class InformationService implements OnApplicationBootstrap {
     }
 
     async loadAnimeFromAnilist(condition, includePrevious = true) {
-        const trackingAnime = [];
-        let current = true;
-        let hasNextPageCurrent = true, hasNextPagePast = true;
-        let currentPage = 1;
+        const trackingAnime = await this.piscina.run({ condition: condition, includePrevious: includePrevious }, { name: "loadAnimeFromAnilist" });
 
-        if (!condition.season) includePrevious = false;
-        let year = condition.year;
+        let response = await Promise.allSettled(trackingAnime.map(anime => {
+            return new Promise(resolve => {
+                this.convertToDbAnime(anime)
+                    .then(animeDbObject => {
+                        this.databaseService.anime.findUnique({
+                            where: {
+                                anilistId: anime.id
+                            }
+                        }).then(animeDb => {
+                            if (!animeDb) {
+                                let id = cuid();
+                                return Promise.all([true, this.databaseService.anime.create({
+                                    data: {
+                                        id: id,
+                                        ...animeDbObject
+                                    }
+                                })]);
+                            } else {
+                                return Promise.all([false, this.databaseService.anime.update({
+                                    where: {
+                                        anilistId: anime.id
+                                    },
+                                    data: {
+                                        ...animeDbObject
+                                    }
+                                })]);
+                            }
+                        }).then(([created, animeDb]) => {
+                            return {
+                                id: animeDb.id,
+                                created: created,
+                                requireUpdate: created || animeDb.currentEpisode !== animeDbObject.currentEpisode
+                            }
+                        }).then(data => {
+                            resolve(data);
+                        })
+                    })
+            })
+        }));
 
-        let previousSeason = condition.season ? condition.season - 1 : undefined;
-        if (previousSeason !== undefined && previousSeason < 0) previousSeason = 3;
+        // @ts-ignore
+        response = response.filter(r => r.status === "fulfilled").map(r => r.value);
 
-        const requestVariables = {
-            ...(condition.season && { season: condition.season } ),
-            page: currentPage,
-            ...(year && { year: year } ),
-            ...(condition.status && { status: condition.status } ),
-            ...(condition.format && { format: condition.format } )
-        };
+        await Promise.all(trackingAnime.map(anime => this.fetchRelations(anime.id, anime)));
 
-        // No way I'm going to write types for these requests...
-        while (hasNextPageCurrent || (includePrevious && hasNextPagePast)) {
-            let animeList = await this.client.request(AIRING_ANIME, requestVariables);
-
-            // @ts-ignore
-            trackingAnime.push(...animeList.Page.media);
-
-            if (current) {
-                hasNextPageCurrent = animeList.Page.pageInfo.hasNextPage;
-                currentPage++;
-
-                if (!hasNextPageCurrent && includePrevious) {
-                    current = false;
-                    requestVariables.season = this.seasons[previousSeason];
-                    requestVariables.year = this.seasons[condition.season] === "SPRING" ? year - 1 : year;
-
-                    currentPage = 1;
-                }
-            } else {
-                hasNextPagePast = animeList.Page.pageInfo.hasNextPage;
-                currentPage++;
-            }
-
-            requestVariables.page = currentPage;
-        }
-
-        let createdAnimeIds = [];
-        let updatedAnimeIds = [];
-
-        for (let anime of trackingAnime) {
-            const animeDbObject = await this.convertToDbAnime(anime);
-            let animeDb = await this.databaseService.anime.findUnique({
-                where: {
-                    anilistId: anime.id
-                }
-            });
-
-            if (!animeDb) { // Anime does not exist in our database, immediately push it to scrape
-                let id = cuid();
-                await this.databaseService.anime.create({
-                    data: {
-                        id: id,
-                        ...animeDbObject
-                    }
-                });
-                createdAnimeIds.push(id);
-            } else {
-                await this.databaseService.anime.update({
-                    where: {
-                        anilistId: anime.id
-                    },
-                    data: {
-                        ...animeDbObject
-                    }
-                });
-
-                if (animeDb.currentEpisode !== animeDbObject.currentEpisode) { // Anime exists in the database but current episode count from Anilist is not the one we stored in database. This means the anime might have updated, push it to scrape queue
-                    updatedAnimeIds.push(animeDb.id);
-                }
-            }
-
-            await this.fetchRelations(anime.id, anime);
-        }
-
-        return {
-            created: createdAnimeIds,
-            updated: updatedAnimeIds
-        }
+        // @ts-ignore
+        this.eventEmitter.emit("anime.refetch", new AnimeRefetchEvent(false, response.filter(r => r.requireUpdate).map(r => r.id)), response.filter(r => r.created).map(r => r.id));
     }
 
-    async refetchAnime(): Promise<object> {
+    async refetchAnime() {
         let currentYear = new Date().getFullYear();
         const currentSeason = Math.floor((new Date().getMonth() / 12 * 4)) % 4;
 
-        return await this.loadAnimeFromAnilist({
+        await this.loadAnimeFromAnilist({
             // year: currentYear,
             // season: this.seasons[currentSeason],
             format: "TV",

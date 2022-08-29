@@ -45,10 +45,11 @@ export default class TvdbProvider extends MetaProvider {
 
             if (!url) return;
 
-            const { data: seasonEntryHtml, status: seasonEntryStatus } = await axios.get(url, {
+            const { data: seasonEntryHtml, status: seasonEntryStatus } = await axios.get(`${url}?now=${Date.now()}`, {
                 validateStatus: () => true,
                 headers: {
-                    "user-agent": USER_AGENT
+                    "user-agent": USER_AGENT,
+                    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
                 }
             });
             if (seasonEntryStatus === 404) return;
@@ -93,7 +94,7 @@ export default class TvdbProvider extends MetaProvider {
                 const episode = episodes.find(e => e.number - tvdb.offset === episodeDb.number);
                 if (!episode) continue;
 
-                const { data: episodeHtml, status } = await proxiedGet(this.tvdbBaseUrl + episode.url, {
+                const { data: episodeHtml, status } = await axios.get(this.tvdbBaseUrl + episode.url, {
                     validateStatus: () => true,
                     headers: {
                         "user-agent": USER_AGENT

@@ -1,4 +1,4 @@
-import { CACHE_MANAGER, Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { CACHE_MANAGER, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import DatabaseService from '../../database/database.service';
 import { Cache } from 'cache-manager';
 import MetaProvider from './meta.provider';
@@ -74,16 +74,17 @@ export default class MetaService implements OnModuleInit {
         let excludedEpisodes = anime.episodes.filter(e => e.titleVariations && e.title && e.description && e.airedAt && e.image).map(e => e.number);
 
         const load = async (provider, anime, excluded = undefined) => {
-            const animeMeta = await this.piscina.run({ name: provider.name, anime: anime, excluded: excluded, mapping: parsedMapping }, { name: "loadMeta" });
+            const updatedEpisodeInfo = [];
 
-            if (!animeMeta) return false;
+            const animeMeta = await this.piscina.run({ name: provider.name, anime: anime, excluded: excluded, mapping: parsedMapping }, { name: "loadMeta" });
+            if (!animeMeta) return [];
 
             for (let episodeMeta of animeMeta.episodes) {
                 if (!episodeMeta) continue;
 
                 const validMeta = Object.fromEntries(Object.entries(episodeMeta).filter(([_, v]) => !!v));
 
-                updatedEpisodeInfo.push(await this.databaseService.episode.update({
+                updatedEpisodeInfo.push(this.databaseService.episode.update({
                     where: {
                         animeId_number: {
                             animeId: anime.id,
@@ -93,10 +94,10 @@ export default class MetaService implements OnModuleInit {
                     data: {
                         ...validMeta
                     }
-                }));
+                }))
             }
 
-            return true;
+            return updatedEpisodeInfo;
         }
 
         let res = false;
@@ -104,7 +105,7 @@ export default class MetaService implements OnModuleInit {
         for (let provider of this.providers) {
             if (!provider.enabled) continue;
 
-            res = await load(provider, anime, excludedEpisodes);
+            await this.databaseService.$transaction(await load(provider, anime, excludedEpisodes));
         }
 
         if (useBackup) {
@@ -114,7 +115,7 @@ export default class MetaService implements OnModuleInit {
                 for (let provider of this.backupProviders) {
                     if (!provider.enabled) continue;
 
-                    await load(provider, anime, excludedEpisodes);
+                    await this.databaseService.$transaction(await load(provider, anime, excludedEpisodes));
                 }
             }
         }

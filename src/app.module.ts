@@ -31,9 +31,10 @@ import ToolModule from './tool/tool.module';
 import ProxyModule from './proxy/proxy.module';
 import SourceModule from './source/source.module';
 import CacheModule from './cache/cache.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
-  imports: [ConfigModule.forRoot({
+  imports: [EventEmitterModule.forRoot(), ConfigModule.forRoot({
     isGlobal: true
   }), DatabaseModule, CacheModule, ScheduleModule.forRoot(), ProxyModule, ToolModule, SearchModule, ScraperModule, SourceModule, InformationModule, AdminModule, HealthModule,
       MappingModule,
