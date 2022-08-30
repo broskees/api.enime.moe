@@ -93,7 +93,7 @@ export default class TvdbProvider extends MetaProvider {
                 const episode = episodes.find(e => e.number - tvdb.offset === episodeDb.number);
                 if (!episode) continue;
 
-                const { data: episodeHtml, status } = await axios.get(this.tvdbBaseUrl + episode.url, {
+                const { data: episodeHtml, status } = await axios.get(`${this.tvdbBaseUrl + episode.url}?now=${Date.now()}`, {
                     validateStatus: () => true,
                     headers: {
                         "user-agent": USER_AGENT
@@ -101,6 +101,7 @@ export default class TvdbProvider extends MetaProvider {
                 });
                 if (status === 404) continue;
 
+                console.log(episodeHtml)
                 let $$ = cheerio.load(episodeHtml);
 
                 const translation = (lang) => {
