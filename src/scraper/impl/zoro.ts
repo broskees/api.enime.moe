@@ -5,6 +5,7 @@ import { Episode, RawSource } from '../../types/global';
 import { clean, removeSpecialChars } from '../../helper/title';
 import { deepMatch } from '../../helper/match';
 import RapidCloud from '../../extractor/impl/rapidcloud';
+import axios from '../../helper/request';
 
 export default class Zoro extends Scraper {
     override enabled = true;
@@ -16,13 +17,13 @@ export default class Zoro extends Scraper {
     async getSourceConsumet(sourceUrl: string | URL): Promise<RawSource> {
         if (typeof sourceUrl === "string") sourceUrl = new URL(sourceUrl);
 
-        let rawSource = (await (await fetch(`${this.consumetServiceUrl}${sourceUrl.pathname.replace("?ep=", "$episode$")}`)).json());
+        let rawSource = (await axios.get(`${this.consumetServiceUrl}${sourceUrl.pathname.replace("?ep=", "$episode$")}`)).data;
 
-        let primarySource = rawSource.sources.find(source => source.quality === "auto");
+        let primarySource = rawSource?.sources?.find(source => source.quality === "auto");
 
         if (!primarySource) return undefined;
 
-        let subtitle = rawSource.subtitles.find(subtitle => subtitle.lang.toLowerCase() === "English");
+        let subtitle = rawSource?.subtitles?.find(subtitle => subtitle.lang.toLowerCase() === "English");
 
         return {
             video: primarySource.url,

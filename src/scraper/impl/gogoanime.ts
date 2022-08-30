@@ -5,6 +5,7 @@ import fetch from 'node-fetch';
 import * as similarity from 'string-similarity';
 import { deepMatch } from '../../helper/match';
 import GogoCDN from '../../extractor/impl/gogocdn';
+import axios from '../../helper/request';
 
 // Credit to https://github.com/riimuru/gogoanime/blob/46edf3de166b7c5152919d6ac12ab6f55d9ed35b/lib/helpers/extractors/goload.js
 export default class GogoanimeScraper extends Scraper {
@@ -15,9 +16,8 @@ export default class GogoanimeScraper extends Scraper {
 
     async getSourceConsumet(sourceUrl: string | URL): Promise<RawSource> {
         if (typeof sourceUrl === "string") sourceUrl = new URL(sourceUrl);
-
-        let response = (await (await fetch(`${this.consumetServiceUrl}${sourceUrl.pathname}`)).json());
-        let rawSourceUrl = response.sources[0].url;
+        let response = (await axios.get(`${this.consumetServiceUrl}${sourceUrl.pathname}`)).data;
+        let rawSourceUrl = response?.sources[0]?.url;
 
         return {
             video: rawSourceUrl,
