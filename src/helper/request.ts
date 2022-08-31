@@ -5,6 +5,8 @@ export const USER_AGENT =
 
 const proxyHosts = ["https://proxy.enime.moe"];
 
+const exemptRetryStatuses = [404, 500, 501, 502, 503];
+
 const proxyHost = () => {
     return proxyHosts[0];
 }
@@ -12,9 +14,9 @@ const proxyHost = () => {
 axiosRetry(axios, {
     retries: 1, // Only retry once, this is in order to balance out the requests so the server IP won't get banned by shits for few minutes causing timeout
     shouldResetTimeout: true,
-    retryCondition: (_error) => true,
+    retryCondition: (_error) => !exemptRetryStatuses.includes(_error.response.status),
     retryDelay: () => 500,
-    onRetry: async (number, __, requestConfig) => {
+    onRetry: async (number, error, requestConfig) => {
         requestConfig.url = proxyHost() + "?url=" + encodeURIComponent(requestConfig.url);
         // @ts-ignore
         requestConfig.headers["x-api-key"] = process.env.PROXY_API_KEY;
