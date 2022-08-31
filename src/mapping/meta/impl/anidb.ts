@@ -70,7 +70,7 @@ export default class AnidbProvider extends MetaProvider {
 
             let englishTitle = $$("#tab_2_pane > div > table > tbody > tr.g_odd.romaji > td > span")?.text();
             if (englishTitle) {
-                if (englishTitle === "TBA" || englishTitle === "TBD" || englishTitle.startsWith("Episode")) englishTitle = undefined;
+                if (englishTitle === "TBA" || englishTitle === "TBD" || englishTitle.startsWith("Episode") || englishTitle === String(episodeNumber)) englishTitle = undefined;
             }
 
             let japaneseTitle = $$("#tab_2_pane > div > table > tbody > tr.g_odd.official.verified.no > td > label")?.text();
