@@ -10,19 +10,17 @@ import { BullModule, InjectQueue } from '@nestjs/bull';
 import { fork } from 'child_process';
 import InformationService from './information.service';
 import { Queue } from 'bull';
-import ProxyService from '../proxy/proxy.service';
 import MappingModule from '../mapping/mapping.module';
-import ProxyModule from '../proxy/proxy.module';
 import DatabaseModule from '../database/database.module';
 import slugify from 'slugify';
 import { sleep } from '../helper/tool';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
-    imports: [EventEmitterModule.forRoot({ global: false }), ProxyModule, BullModule.registerQueue({
+    imports: [EventEmitterModule.forRoot({ global: false }), BullModule.registerQueue({
         name: "scrape"
     }), MappingModule, DatabaseModule],
-    providers: [InformationService, ProxyService, ScraperService, DatabaseService],
+    providers: [InformationService, ScraperService, DatabaseService],
     exports: [InformationService]
 })
 export default class InformationModule implements OnApplicationBootstrap {
@@ -39,6 +37,8 @@ export default class InformationModule implements OnApplicationBootstrap {
             performance.mark("information-fetch-end");
 
             Logger.debug(`Scheduled refetch finished, spent ${performance.measure("information-fetch", "information-fetch-start", "information-fetch-end").duration.toFixed(2)}ms`)
+        }).catch(error => {
+            Logger.error(`Scheduled refetch resulted in an error: ${error}`);
         });
     }
 
@@ -50,7 +50,9 @@ export default class InformationModule implements OnApplicationBootstrap {
         this.informationService.resyncAnime().then(() => {
             performance.mark("resync-end");
 
-            Logger.debug(`Scheduled resync finished, spent ${performance.measure("resync", "resync-start", "resync-end").duration.toFixed(2)}ms`);
+            Logger.debug(`Scheduled resync for all anime finished, spent ${performance.measure("resync", "resync-start", "resync-end").duration.toFixed(2)}ms`);
+        }).catch(error => {
+            Logger.error(`Scheduled resync for all anime resulted in an error: ${error}`);
         });
     }
 
@@ -68,8 +70,10 @@ export default class InformationModule implements OnApplicationBootstrap {
         this.informationService.resyncAnime(releasingAnime.map(anime => anime.id)).then(() => {
             performance.mark("resync-end-releasing");
 
-            Logger.debug(`Scheduled resync finished, spent ${performance.measure("resync-releasing", "resync-start-releasing", "resync-end-releasing").duration.toFixed(2)}ms`);
-        });
+            Logger.debug(`Scheduled resync for releasing anime finished, spent ${performance.measure("resync-releasing", "resync-start-releasing", "resync-end-releasing").duration.toFixed(2)}ms`);
+        }).catch(error => {
+            Logger.error(`Scheduled resync for releasing anime resulted in an error: ${error}`);
+        });;
     }
 
     // Every 10 minutes, we check anime that have don't have "enough episode" stored in the database (mostly the anime source sites update slower than Anilist because subs stuff) so we sync that part more frequently

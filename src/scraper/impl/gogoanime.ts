@@ -1,7 +1,6 @@
 import Scraper from '../scraper';
 import * as cheerio from 'cheerio';
 import { AnimeWebPage, Episode, RawSource, SourceType } from '../../types/global';
-import fetch from 'node-fetch';
 import * as similarity from 'string-similarity';
 import { deepMatch } from '../../helper/match';
 import GogoCDN from '../../extractor/impl/gogocdn';

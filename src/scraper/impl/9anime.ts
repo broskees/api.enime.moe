@@ -4,7 +4,6 @@ import { load } from 'cheerio';
 import { range } from '../../helper/tool';
 import { decode, encode } from 'ascii-url-encoder';
 import { deepMatch } from '../../helper/match';
-import fetch from 'node-fetch';
 import axios from 'axios';
 
 export default class NineAnimeScraper extends Scraper {

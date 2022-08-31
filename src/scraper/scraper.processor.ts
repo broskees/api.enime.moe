@@ -7,8 +7,8 @@ import cuid from 'cuid';
 import dayjs from 'dayjs';
 import DatabaseService from '../database/database.service';
 import ScraperService from './scraper.service';
-import fetch from 'node-fetch';
 import MetaService from '../mapping/meta/meta.service';
+import axios from 'axios';
 
 export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
     try {
@@ -51,10 +51,10 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
             // @ts-ignore
             if (anime.mappings.mal) {
                 // @ts-ignore
-                malSyncData = await fetch(`https://api.malsync.moe/mal/anime/${anime.mappings.mal}`);
+                let { data: malSyncData } = await axios.get(`https://api.malsync.moe/mal/anime/${anime.mappings.mal}`);
 
                 try {
-                    malSyncData = (await malSyncData.json())?.Sites
+                    malSyncData = malSyncData?.Sites
                 } catch (e) {
 
                 }
@@ -62,12 +62,28 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
 
             let requireMetaSync = false;
 
+            let lastChecks = anime.lastChecks || {};
+            let lastEpisodeUpdate = anime.lastEpisodeUpdate;
+
             try {
                 for (let scraper of await scraperService.scrapers()) {
                     if (infoOnly && !scraper.infoOnly) continue;
 
                     const title = anime.title;
                     title["synonyms"] = anime.synonyms;
+
+                    let lastCheckedTime = dayjs(lastChecks ? lastChecks[scraper.websiteMeta.id] || 0 : 0);
+                    const status = anime.status;
+
+                    const current = dayjs(new Date());
+
+                    if (status === "FINISHED" && current.year() - anime.year > 1 && lastCheckedTime.diff(current, "week") <= 4) {
+                        continue;
+                    } else if (status === "HIATUS" && !!anime.next) {
+                        const next = dayjs(anime.next);
+
+                        if (next.isAfter(current) && next.diff(current, "day") >= 3) continue;
+                    }
 
                     let matchedAnimeEntry;
 
@@ -121,9 +137,15 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                     for (let i = 0; i < episodesWithSource.length; i++) {
                         const episodeWithSource = episodesWithSource[i];
 
-                        if (episodeWithSource && episodeWithSource.sources.some(source => source.websiteId === scraper.websiteMeta.id)) {
-                            excludedNumbers.push(episodeWithSource.number);
-                            continue;
+                        if (episodeWithSource) {
+                            let exclude = false;
+
+                            if (episodeWithSource.sources.some(source => source.websiteId === scraper.websiteMeta.id)) exclude = true;
+
+                            if (exclude) {
+                                excludedNumbers.push(episodeWithSource.number);
+                                continue;
+                            }
                         }
 
                         episodeToScrapeLower = Math.min(episodeToScrapeLower,i);
@@ -229,32 +251,36 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                                         source: scraper.name()
                                     });
 
+                                    lastEpisodeUpdate = new Date();
                                     Logger.debug(`Updated an anime with episode number ${episodeDb.number} under ID ${anime.id}`);
-                                    await databaseService.anime.update({
-                                        where: {
-                                            id: anime.id
-                                        },
-                                        data: {
-                                            lastEpisodeUpdate: dayjs().toISOString()
-                                        }
-                                    })
                                 }
                             }
                         }
                     } catch (e) {
                         Logger.error(`Error with anime ID ${anime.id} with scraper on url ${scraper.url()}, skipping this job`, e);
                     }
-                }
 
-                if (requireMetaSync) await metaService.synchronize(anime);
+                    lastChecks[scraper.websiteMeta.id] = Date.now();
+                }
             } catch (e) {
                 Logger.error(e);
                 Logger.error(e.stack);
             }
 
-            progress++;
-            await job.progress(progress);
+            await databaseService.anime.update({
+                where: {
+                    id: anime.id
+                },
+                data: {
+                    lastChecks: lastChecks,
+                    lastEpisodeUpdate: lastEpisodeUpdate
+                }
+            });
+            if (requireMetaSync) await metaService.synchronize(anime);
         }
+
+        progress++;
+        await job.progress(progress);
 
         if (updated.length) {
             const groupedUpdates = updated.reduce(function (r, a) {
@@ -265,27 +291,25 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
 
             for (let groupUpdateKey of Object.keys(groupedUpdates)) {
                 const groupUpdate = groupedUpdates[groupUpdateKey];
-                await fetch(process.env.DISCORD_WEBHOOK_URL, {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({
-                        "content": `There ${groupUpdate.length <= 1 ? "is an update" : "are multiple updates"} to the Enime database`,
-                        "embeds": [{
-                            "description": groupUpdate.map(update => {
-                                return `${update.anime} Episode ${update.episodeNumber} ${update.episodeTitle ? `- ${update.episodeTitle}` : ""} (Watch it [here](https://enime.moe/watch/${update.animeSlug}/${update.episodeNumber}) on Enime.moe)`
-                            }).join("\n"),
-                            "url": `https://api.enime.moe`,
-                            "color": 15198183,
-                            "author": {
-                                "name": `Provided by ${groupUpdateKey || "Unknown"}`
-                            },
-                            "footer": {
-                                "text": "Enime Project"
-                            },
-                            "timestamp": new Date().toISOString(),
-                            "fields": []
-                        }],
-                    })
+                await axios.post(process.env.DISCORD_WEBHOOK_URL, {
+                    "content": `There ${groupUpdate.length <= 1 ? "is an update" : "are multiple updates"} to the Enime database`,
+                    "embeds": [{
+                        "description": groupUpdate.map(update => {
+                            return `${update.anime} Episode ${update.episodeNumber} ${update.episodeTitle ? `- ${update.episodeTitle}` : ""} (Watch it [here](https://enime.moe/watch/${update.animeSlug}/${update.episodeNumber}) on Enime.moe)`
+                        }).join("\n"),
+                        "url": `https://api.enime.moe`,
+                        "color": 15198183,
+                        "author": {
+                            "name": `Provided by ${groupUpdateKey || "Unknown"}`
+                        },
+                        "footer": {
+                            "text": "Enime Project"
+                        },
+                        "timestamp": new Date().toISOString(),
+                        "fields": []
+                    }],
+                }, {
+                    headers: {"Content-Type": "application/json"}
                 });
             }
         }

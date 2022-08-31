@@ -10,7 +10,6 @@ import cuid from 'cuid';
 import { resolve } from 'path';
 import MappingService from '../mapping/mapping.service';
 import Prisma from '@prisma/client';
-import ProxyService from '../proxy/proxy.service';
 import MetaService from '../mapping/meta/meta.service';
 import Piscina from 'piscina';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
@@ -22,7 +21,7 @@ export default class InformationService implements OnApplicationBootstrap {
     private readonly anilistBaseEndpoint = "https://graphql.anilist.co";
     private piscina: Piscina;
 
-    constructor(private eventEmitter: EventEmitter2, @Inject("DATABASE") private readonly databaseService: DatabaseService, private readonly proxyService: ProxyService, private readonly mappingService: MappingService, private readonly metaService: MetaService, @InjectQueue("scrape") private readonly queue: Queue) {
+    constructor(private eventEmitter: EventEmitter2, @Inject("DATABASE") private readonly databaseService: DatabaseService, private readonly mappingService: MappingService, private readonly metaService: MetaService, @InjectQueue("scrape") private readonly queue: Queue) {
         this.client = new GraphQLClient(this.anilistBaseEndpoint, {
             headers: {
                 "Content-Type": "application/json",
@@ -55,6 +54,8 @@ export default class InformationService implements OnApplicationBootstrap {
         if (event.createdAnimeIds?.length) {
             this.resyncAnime(event.createdAnimeIds).then(() => {
                 Logger.debug("Resync-ed newly created anime(s)");
+            }).catch(error => {
+                Logger.error(`Newly created anime(s) failed ot resync: ${error}`);
             });
         }
     }
@@ -170,6 +171,11 @@ export default class InformationService implements OnApplicationBootstrap {
 
         if (!ids?.length) {
             animeList = await this.databaseService.anime.findMany({
+                where: {
+                    status: {
+                        not: "RELEASING"
+                    }
+                },
                 select: {
                     id: true,
                     anilistId: true
@@ -187,7 +193,7 @@ export default class InformationService implements OnApplicationBootstrap {
             })));
         }
 
-        const res = await Promise.allSettled(animeList.map(anime => {
+        return await Promise.allSettled(animeList.map(anime => {
             return new Promise<number>((resolve, reject) => {
                 // @ts-ignore
                 let mapping = mappings?.find(mapping => mapping?.anilist_id == anime.anilistId);
@@ -216,14 +222,12 @@ export default class InformationService implements OnApplicationBootstrap {
                 }).then(dbAnime => {
                     if (dbAnime.episodes.some(ep => !ep.airedAt || !ep.title || !ep.titleVariations || !ep.image || !ep.description)) this.metaService.synchronize(dbAnime).then(() => resolve(0));
                     else resolve(0)
-                }).catch(err => {
-                    Logger.error(err);
-                    reject(err)
+                }).catch(error => {
+                    Logger.error(error);
+                    reject(error)
                 })
             })
         }));
-
-        return res;
     }
 
     async convertToDbAnime(anilistAnime, includeMapping = true) {
@@ -297,11 +301,12 @@ export default class InformationService implements OnApplicationBootstrap {
         }));
 
         const anilistAnimeList = await Promise.all(anilistIds.map(anilistId => {
-            return new Promise(resolve => {
+            return new Promise((resolve, reject) => {
                 this.piscina.run({
                     anilistId: anilistId
                 }, { name: "fetchAnilistAnime" })
                     .then(anilistAnime => resolve(anilistAnime))
+                    .catch(error => reject(error))
             })
         }));
 
@@ -372,7 +377,7 @@ export default class InformationService implements OnApplicationBootstrap {
         const trackingAnime = await this.piscina.run({ condition: condition, includePrevious: includePrevious }, { name: "loadAnimeFromAnilist" });
 
         let response = await Promise.allSettled(trackingAnime.map(anime => {
-            return new Promise(resolve => {
+            return new Promise((resolve, reject) => {
                 this.convertToDbAnime(anime)
                     .then(animeDbObject => {
                         this.databaseService.anime.findUnique({
@@ -432,6 +437,8 @@ export default class InformationService implements OnApplicationBootstrap {
                             }
                         }).then(data => {
                             resolve(data);
+                        }).catch(error => {
+                            reject(error)
                         })
                     })
             })

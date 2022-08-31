@@ -1,6 +1,6 @@
 import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common';
-import fetch from 'node-fetch';
 import { Cache } from 'cache-manager';
+import axios from 'axios';
 
 @Injectable()
 export default class MappingService {
@@ -12,7 +12,7 @@ export default class MappingService {
     async getMappings() {
         let cachedMapping = await this.cacheManager.get("anime-list-mapping");
         if (!cachedMapping) {
-            cachedMapping = await (await fetch(this.animeListMappingEndpoint)).json();
+            cachedMapping = (await axios.get(this.animeListMappingEndpoint)).data;
             await this.cacheManager.set("anime-list-mapping", JSON.stringify(cachedMapping), 1000 * 60 * 60 * 12);
         }
         else if (typeof cachedMapping === "string") {

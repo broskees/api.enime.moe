@@ -36,6 +36,7 @@ model Anime {
   relations         Relation[]    @relation("relations")
   episodes          Episode[]
   genre             Genre[]
+  lastChecks        Json?
 
   @@map("anime")
 }

@@ -4,7 +4,6 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import DatabaseService from './database/database.service';
-import ProxyService from './proxy/proxy.service';
 import ScraperModule from './scraper/scraper.module';
 import InformationModule from './information/information.module';
 import HealthModule from './health/health.module';
@@ -28,7 +27,6 @@ import ViewController from './controller/view.controller';
 import SearchModule from './search/search.module';
 import MappingModule from './mapping/mapping.module';
 import ToolModule from './tool/tool.module';
-import ProxyModule from './proxy/proxy.module';
 import SourceModule from './source/source.module';
 import CacheModule from './cache/cache.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -36,7 +34,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 @Module({
   imports: [EventEmitterModule.forRoot(), ConfigModule.forRoot({
     isGlobal: true
-  }), DatabaseModule, CacheModule, ScheduleModule.forRoot(), ProxyModule, ToolModule, SearchModule, ScraperModule, SourceModule, InformationModule, AdminModule, HealthModule,
+  }), DatabaseModule, CacheModule, ScheduleModule.forRoot(), ToolModule, SearchModule, ScraperModule, SourceModule, InformationModule, AdminModule, HealthModule,
       MappingModule,
       BullModule.forRoot({
         redis: {
@@ -56,7 +54,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
       })
   ],
   controllers: [AppController, ViewController, AnimeController, StatsController, RecentController, EpisodeController, PopularController],
-  providers: [AppService, DatabaseService, ProxyService, ScraperService, EpisodeService, SourceService,
+  providers: [AppService, DatabaseService, ScraperService, EpisodeService, SourceService,
       {
           provide: APP_GUARD,
           useClass: ThrottlerBehindProxyGuard,

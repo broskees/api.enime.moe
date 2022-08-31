@@ -1,5 +1,4 @@
 import { Logger, Module, OnModuleInit } from '@nestjs/common';
-import ProxyService from '../proxy/proxy.service';
 import { BullModule, Process, Processor } from '@nestjs/bull';
 import ScraperService from './scraper.service';
 import InformationModule from '../information/information.module';
@@ -10,15 +9,14 @@ import Scraper from './scraper';
 import { transform } from '../helper/romaji';
 import * as path from 'path';
 import * as fs from 'fs';
-import ProxyModule from '../proxy/proxy.module';
 import MappingModule from '../mapping/mapping.module';
 
 @Module({
-    imports: [ProxyModule, MappingModule, BullModule.registerQueue({
+    imports: [MappingModule, BullModule.registerQueue({
         name: "scrape",
         processors: [fs.existsSync(path.join(__dirname, "scraper.processor.js")) ? path.join(__dirname, "scraper.processor.js") : path.join(__dirname, "scraper.processor.ts")]
     }), InformationModule],
-    providers: [ScraperService, ProxyService],
+    providers: [ScraperService],
     exports: [ScraperService]
 })
 export default class ScraperModule implements OnModuleInit {
