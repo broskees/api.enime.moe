@@ -9,10 +9,11 @@ import DatabaseService from '../database/database.service';
 import ScraperService from './scraper.service';
 import MetaService from '../mapping/meta/meta.service';
 import axios from 'axios';
+import { AppModule } from '../app.module';
 
 export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
     try {
-        const app = await NestFactory.create(ScraperModule);
+        const app = await NestFactory.createApplicationContext(AppModule);
         let scraperService = app.select(ScraperModule).get(ScraperService);
         let databaseService = app.select(ScraperModule).get(DatabaseService);
         let metaService = app.select(ScraperModule).get(MetaService);

@@ -73,7 +73,7 @@ export default class InformationModule implements OnApplicationBootstrap {
             Logger.debug(`Scheduled resync for releasing anime finished, spent ${performance.measure("resync-releasing", "resync-start-releasing", "resync-end-releasing").duration.toFixed(2)}ms`);
         }).catch(error => {
             Logger.error(`Scheduled resync for releasing anime resulted in an error: ${error}`);
-        });;
+        });
     }
 
     // Every 10 minutes, we check anime that have don't have "enough episode" stored in the database (mostly the anime source sites update slower than Anilist because subs stuff) so we sync that part more frequently
@@ -235,5 +235,6 @@ export default class InformationModule implements OnApplicationBootstrap {
     }
 
     async onApplicationBootstrap() {
+        this.resyncAnimeReleasing()
     }
 }

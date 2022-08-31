@@ -220,14 +220,16 @@ export default class InformationService implements OnApplicationBootstrap {
                         episodes: true
                     }
                 }).then(dbAnime => {
-                    if (dbAnime.episodes.some(ep => !ep.airedAt || !ep.title || !ep.titleVariations || !ep.image || !ep.description)) this.metaService.synchronize(dbAnime).then(() => resolve(0));
+                    if (dbAnime.episodes.some(ep => !ep.airedAt || !ep.title || !ep.titleVariations || !ep.image || !ep.description)) this.metaService.synchronize(dbAnime).catch(error => reject(error)).then(() => resolve(0));
                     else resolve(0)
                 }).catch(error => {
                     Logger.error(error);
                     reject(error)
                 })
             })
-        }));
+        })).catch(error => {
+            Logger.error(error);
+        });
     }
 
     async convertToDbAnime(anilistAnime, includeMapping = true) {
