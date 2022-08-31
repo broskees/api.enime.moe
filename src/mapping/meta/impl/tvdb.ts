@@ -101,7 +101,6 @@ export default class TvdbProvider extends MetaProvider {
                 });
                 if (status === 404) continue;
 
-                console.log(episodeHtml)
                 let $$ = cheerio.load(episodeHtml);
 
                 const translation = (lang) => {
