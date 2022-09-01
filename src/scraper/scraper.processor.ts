@@ -52,7 +52,7 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
             // @ts-ignore
             if (anime.mappings.mal) {
                 // @ts-ignore
-                let { data: malSyncData } = await axios.get(`https://api.malsync.moe/mal/anime/${anime.mappings.mal}`);
+                let { data: malSyncData } = await axios.get(`https://api.malsync.moe/mal/anime/${anime.mappings.mal}`, { validateStatus: () => true });
 
                 try {
                     malSyncData = malSyncData?.Sites
