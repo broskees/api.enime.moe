@@ -65,7 +65,7 @@ export default class SourceService {
                     })
                 });
             } catch (e) {
-                rawSource = scraper.getSourceConsumet(url || source.target);
+                rawSource = await scraper.getSourceConsumet(url || source.target);
                 Logger.error(`Error occurred while trying to fetch source ID ${source.id}, falling back to Consumet service`, e);
 
                 if (!rawSource) throw new InternalServerErrorException("Cannot obtain the URL for this source, please contact administrators.");

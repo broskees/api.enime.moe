@@ -14,7 +14,7 @@ const proxyHost = () => {
 axiosRetry(axios, {
     retries: 1, // Only retry once, this is in order to balance out the requests so the server IP won't get banned by shits for few minutes causing timeout
     shouldResetTimeout: true,
-    retryCondition: (_error) => !exemptRetryStatuses.includes(_error.response.status),
+    retryCondition: (_error) => !_error?.response?.status ? true : !exemptRetryStatuses.includes(_error.response.status),
     retryDelay: () => 500,
     onRetry: async (number, error, requestConfig) => {
         requestConfig.url = proxyHost() + "?url=" + encodeURIComponent(requestConfig.url);
