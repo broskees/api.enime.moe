@@ -52,7 +52,7 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
             // @ts-ignore
             if (anime.mappings.mal) {
                 // @ts-ignore
-                let { data: malSyncData } = await axios.get(`https://api.malsync.moe/mal/anime/${anime.mappings.mal}`, { validateStatus: () => true });
+                malSyncData = (await axios.get(`https://api.malsync.moe/mal/anime/${anime.mappings.mal}`, { validateStatus: () => true })).data;
 
                 try {
                     malSyncData = malSyncData?.Sites
@@ -111,6 +111,8 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
 
                     //  if (!matchedAnimeEntry) matchedAnimeEntry = await scraperModule.matchAnime(anime.title, scraper);
                     if (!matchedAnimeEntry) continue;
+
+                    lastChecks[scraper.websiteMeta.id] = Date.now();
 
                     let episodeToScrapeLower = Number.MAX_SAFE_INTEGER, episodeToScraperHigher = Number.MIN_SAFE_INTEGER;
 
@@ -260,8 +262,6 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                     } catch (e) {
                         Logger.error(`Error with anime ID ${anime.id} with scraper on url ${scraper.url()}, skipping this job`, e);
                     }
-
-                    lastChecks[scraper.websiteMeta.id] = Date.now();
                 }
             } catch (e) {
                 Logger.error(e);
