@@ -23,9 +23,10 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
         const updated = [];
 
         let progress = 0;
-        for (let id of ids) {
-            Logger.debug(`Received a job to fetch anime with ID ${id}, info only mode: ${infoOnly}`);
 
+        Logger.debug(`Received a job to scrape ${ids.length} anime, info only mode: ${infoOnly}`);
+
+        for (let id of ids) {
             let anime = await databaseService.anime.findUnique({
                 where: {
                     id

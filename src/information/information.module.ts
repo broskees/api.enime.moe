@@ -235,6 +235,5 @@ export default class InformationModule implements OnApplicationBootstrap {
     }
 
     async onApplicationBootstrap() {
-        this.resyncAnimeReleasing()
     }
 }

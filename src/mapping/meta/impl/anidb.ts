@@ -62,6 +62,8 @@ export default class AnidbProvider extends MetaProvider {
             const episodeData = await episodeDataPromise;
             const { data: episode, status } = episodeData;
 
+            if (status === 404) continue;
+
             const $$ = cheerio.load(episode);
 
             let airedAtRaw = $$("[itemprop='datePublished']")?.prop("content");
