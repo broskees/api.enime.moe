@@ -126,7 +126,9 @@ export default class InformationModule implements OnApplicationBootstrap {
 
         let batch = [];
         let count = 0;
-        animeList = animeList.filter(anime => anime.currentEpisode !== anime.episodes.filter(episode => episode.sources.length === scrapers.filter(scraper => !scraper.infoOnly && scraper.enabled).length).length);
+        animeList = animeList.filter(anime => {
+            return anime.currentEpisode !== anime.episodes.filter(episode => episode.sources.length === scrapers.filter(scraper => !scraper.infoOnly && scraper.enabled).length).length
+        });
 
         for (let i = 0; i < animeList.length; i++) { // Due to large volume of anime in the database, it's better if we batch the anime to multiple jobs
             let anime = animeList[i];

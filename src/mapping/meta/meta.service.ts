@@ -4,6 +4,7 @@ import { Cache } from 'cache-manager';
 import MetaProvider from './meta.provider';
 import TvdbProvider from './impl/tvdb';
 import AnidbProvider from './impl/anidb';
+import TmdbProvider from './impl/tmdb';
 import Piscina from 'piscina';
 import { resolve } from 'path';
 import axios from '../../helper/request';
@@ -19,6 +20,7 @@ export default class MetaService implements OnModuleInit {
 
     constructor(@Inject("DATABASE") private readonly databaseService: DatabaseService, @Inject(CACHE_MANAGER) private readonly cacheManager: Cache) {
         this.providers.push(new TvdbProvider());
+        // this.providers.push(new TmdbProvider());
         this.backupProviders.push(new AnidbProvider());
 
         this.parser = new XMLParser({
