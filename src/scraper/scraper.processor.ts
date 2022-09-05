@@ -24,6 +24,7 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
 
         let progress = 0;
 
+        performance.mark(`scraper-job-${job.id}-start`);
         Logger.debug(`Received a job to scrape ${ids.length} anime, info only mode: ${infoOnly}`);
 
         for (let id of ids) {
@@ -264,8 +265,8 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                     }
                 }
             } catch (e) {
-                Logger.error(e);
-                Logger.error(e.stack);
+                Logger.error(`Error with anime ID ${anime.id}, skipping this job`, e, e.stack);
+                continue;
             }
 
             await databaseService.anime.update({
@@ -314,6 +315,9 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                 });
             }
         }
+
+        performance.mark(`scraper-job-${job.id}-end`);
+        Logger.debug(`Finished scraping job, spent ${performance.measure(`scraper-job-${job.id}`, `scraper-job-${job.id}-start`, `scraper-job-${job.id}-end`).duration.toFixed(2)}ms`)
 
         cb(null, "Done");
     } catch (e) {
