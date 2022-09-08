@@ -35,6 +35,14 @@ REDIS_PASSWORD={Redis password}
 ## Support
 - We use Discord for quick suggestions & bug reports, please join [here](https://discord.gg/nxr8be8WGa)
 
+## FAQ
+* Do you download the videos yourself / is your API subject to DMCA compliant
+  * No, Enime API never downloads the video from any source provider, only link will be returned from the response hence it is completely not subject to DMCA compliant
+
+## Performance
+* Enime API tries to only scrape anime that has necessity of being scraped through a semi-sophisticated algorithm, resulting in its capacity to keep track of thousands of anime at the same time with high performance.
+  * On average, Enime API only uses ~800MB of RAM (spikes to ~2.5GB when intensively scraping) and <15% of CPU (80% when intensively scraping) while keeping track of ~2000 anime
+
 ## Credit
 - https://github.com/consumet/consumet.ts - Some of the scraper logic from various anime sites
 - https://github.com/consumet/consumet-api - Used as a backup scraper
