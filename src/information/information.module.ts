@@ -28,7 +28,7 @@ export default class InformationModule implements OnApplicationBootstrap {
         if (!process.env.TESTING) dayjs.extend(utc);
     }
 
-    @Cron(CronExpression.EVERY_30_MINUTES)
+    @Cron(CronExpression.EVERY_10_MINUTES)
     async updateAnime() {
         Logger.debug("Now we start refetching currently releasing anime from Anilist");
         performance.mark("information-fetch-start");
