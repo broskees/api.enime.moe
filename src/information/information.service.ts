@@ -350,7 +350,7 @@ export default class InformationService implements OnApplicationBootstrap {
 
             if (!anilistAnime) throw new NotFoundException("Such anime cannot be found from Anilist");
 
-            const animeDbObject = await this.convertToDbAnime(anilistAnime, false);
+            const animeDbObject = await this.convertToDbAnime(anilistAnime, true);
 
             let id = animeDb ? animeDb.id : cuid();
 
