@@ -4,7 +4,7 @@ import { AnimeWebPage, Episode, RawSource, SourceType } from '../../types/global
 import * as similarity from 'string-similarity';
 import { deepMatch } from '../../helper/match';
 import GogoCDN from '../../extractor/impl/gogocdn';
-import axios from '../../helper/request';
+import axios, { proxiedGet } from '../../helper/request';
 
 // Credit to https://github.com/riimuru/gogoanime/blob/46edf3de166b7c5152919d6ac12ab6f55d9ed35b/lib/helpers/extractors/goload.js
 export default class GogoanimeScraper extends Scraper {
@@ -40,7 +40,7 @@ export default class GogoanimeScraper extends Scraper {
     async fetch(path: string, startNumber: number, endNumber: number, excludedNumbers: number[]): Promise<Episode[]> {
         let url = `${this.url()}${path}`;
 
-        let response = this.get(url, {});
+        let response = this.get(url);
         let responseText = await (await response).data;
 
         let $ = cheerio.load(responseText);
@@ -48,7 +48,7 @@ export default class GogoanimeScraper extends Scraper {
         const movieId = $("#movie_id").attr("value");
 
         url = `https://ajax.gogo-load.com/ajax/load-list-episode?ep_start=${startNumber}&ep_end=${endNumber}&id=${movieId}`;
-        response = this.get(url, {});
+        response = this.get(url);
         responseText = await (await response).data;
 
         $ = cheerio.load(responseText);
@@ -56,7 +56,7 @@ export default class GogoanimeScraper extends Scraper {
         const episodesSource = [];
 
         $("#episode_related > li").each((i, el) => {
-            const number = parseInt($(el).find(`div.name`).text().replace("EP ", ""));
+            const number = parseFloat($(el).find(`div.name`).text().replace("EP ", ""));
             if (Number.isNaN(number) || number % 1 !== 0 || excludedNumbers.includes(number)) return; // Don't scrape already scraped episodes and filler episodes (ep .x)
 
             episodesSource.push({

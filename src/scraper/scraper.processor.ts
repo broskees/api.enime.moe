@@ -15,6 +15,8 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
 
     try {
         let scraperService = app.select(ScraperModule).get(ScraperService);
+        const scrapers = await scraperService.scrapers();
+
         let databaseService = app.select(ScraperModule).get(DatabaseService);
         let metaService = app.select(ScraperModule).get(MetaService);
 
@@ -68,24 +70,30 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
             let lastEpisodeUpdate = anime.lastEpisodeUpdate;
 
             try {
-                for (let scraper of await scraperService.scrapers()) {
+                for (let scraper of scrapers) {
                     if (infoOnly && !scraper.infoOnly) continue;
+
+                    if (!scraper.websiteMeta) console.log(scraper);
 
                     const title = anime.title;
                     title["synonyms"] = anime.synonyms;
 
-                    let lastCheckedTime = dayjs(lastChecks ? lastChecks[scraper.websiteMeta.id] || 0 : 0);
+                    const lastCheckedTimeRaw = lastChecks ? lastChecks[scraper.websiteMeta.id] || 0 : 0;
+
+                    let lastCheckedTime = dayjs(lastCheckedTimeRaw);
                     const status = anime.status;
 
                     const current = dayjs(new Date());
 
-                    if (status === "FINISHED" && current.year() - anime.year > 1 && lastCheckedTime.diff(current, "week") <= 4) {
+                    /*
+                    if (status === "FINISHED" && current.year() - anime.year > 1 && lastCheckedTimeRaw !== 0 && lastCheckedTime.diff(current, "week") <= 4) {
                         continue;
                     } else if (status === "HIATUS" && !!anime.next) {
                         const next = dayjs(anime.next);
 
                         if (next.isAfter(current) && next.diff(current, "day") >= 3) continue;
                     }
+                    */
 
                     let matchedAnimeEntry;
 
@@ -168,6 +176,7 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                         if (Array.isArray(scrapedEpisodes) && !scrapedEpisodes.length) continue;
 
                         if (!Array.isArray(scrapedEpisodes)) scrapedEpisodes = [scrapedEpisodes];
+
                         if (scrapedEpisodes.length > anime.currentEpisode) continue; // STOP! This anime source site uses a different episode numbering strategy that it will potentially break the database. Don't bother use this anime's information from this site
 
                         for (let scrapedEpisode of scrapedEpisodes) {
@@ -261,7 +270,7 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
                             }
                         }
                     } catch (e) {
-                        Logger.error(`Error with anime ID ${anime.id} with scraper on url ${scraper.url()}, skipping this job`, e);
+                        Logger.error(`Error with anime ID ${anime.id} with scraper on url ${scraper.url()}, skipping this job`, e, e.stack);
                     }
                 }
             } catch (e) {

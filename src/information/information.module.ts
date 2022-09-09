@@ -13,7 +13,7 @@ import { Queue } from 'bull';
 import MappingModule from '../mapping/mapping.module';
 import DatabaseModule from '../database/database.module';
 import slugify from 'slugify';
-import { sleep } from '../helper/tool';
+import { chunkArray, sleep } from '../helper/tool';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
@@ -130,28 +130,20 @@ export default class InformationModule implements OnApplicationBootstrap {
 
         const scrapers = await this.scraperService.scrapers();
 
-        let batch = [];
-        let count = 0;
         animeList = animeList.filter(anime => {
             return anime.currentEpisode !== anime.episodes.filter(episode => episode.sources.length === scrapers.filter(scraper => !scraper.infoOnly && scraper.enabled).length).length
         });
 
-        for (let i = 0; i < animeList.length; i++) { // Due to large volume of anime in the database, it's better if we batch the anime to multiple jobs
-            let anime = animeList[i];
-            if (count > 50 || i >= animeList.length - 1) {
-                await this.queue.add( { // Episode number are unique values, we can safely assume "if the current episode progress count is not even equal to the amount of episodes we have in database, the anime entry should be outdated"
-                    animeIds: batch,
-                    infoOnly: false
-                }, {
-                    priority: 6,
-                    removeOnComplete: true
-                });
+        const chunkedAnimeList = chunkArray(animeList, 50);
 
-                batch = [];
-                count = 0;
-            } else {
-                batch.push(anime.id)
-            }
+        for (let animeList of chunkedAnimeList) {
+            await this.queue.add( { // Episode number are unique values, we can safely assume "if the current episode progress count is not even equal to the amount of episodes we have in database, the anime entry should be outdated"
+                animeIds: animeList.map(anime => anime.id),
+                infoOnly: false
+            }, {
+                priority: 6,
+                removeOnComplete: true
+            });
         }
     }
 
@@ -247,5 +239,14 @@ export default class InformationModule implements OnApplicationBootstrap {
     }
 
     async onApplicationBootstrap() {
+        setTimeout(async () => {
+            await this.queue.add({
+                animeIds: ["cl7u2snsq000ovcluhd992asc"],
+                infoOnly: false
+            }, {
+                priority: 5,
+                removeOnComplete: true
+            });
+        }, 3000)
     }
 }
