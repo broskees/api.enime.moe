@@ -139,7 +139,7 @@ export default class GogoanimeScraper extends Scraper {
     }
 
     url(): string {
-        return "https://gogoanime.lu";
+        return "https://www1.gogoanime.ee";
     }
 
 }
