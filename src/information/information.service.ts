@@ -260,7 +260,7 @@ export default class InformationService implements OnApplicationBootstrap {
             }
         }
 
-        slugify.extend({"×": "x", "/": "-", "?": "-question"})
+        slugify.extend({"×": "x", "/": "-", "?": "-question", ";": "-"})
 
         return {
             title: anilistAnime.title,

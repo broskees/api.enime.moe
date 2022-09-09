@@ -79,31 +79,37 @@ export default class InformationModule implements OnApplicationBootstrap {
     // Every 10 minutes, we check anime that have don't have "enough episode" stored in the database (mostly the anime source sites update slower than Anilist because subs stuff) so we sync that part more frequently
     @Cron(CronExpression.EVERY_HOUR)
     async checkForUpdatedEpisodes() {
-        await this.updateOnCondition({
+        this.updateOnCondition({
             status: {
                 in: ["RELEASING"]
             }
-        })
+        }).then(() => {
+            Logger.debug("Finished checking updates episodes for releasing anime");
+        });
     }
 
     // Give a higher priority to anime that are either releasing or finished but there's no episode available
     @Cron(CronExpression.EVERY_30_MINUTES)
     async checkForUpdatedEpisodesForAnimeWithoutEpisodes() {
-        await this.updateOnCondition({
+        this.updateOnCondition({
             status: {
                 in: ["FINISHED"]
             },
             lastEpisodeUpdate: null
-        })
+        }).then(() => {
+            Logger.debug("Finished checking updates episodes for anime without episodes");
+        });
     }
 
     @Cron(CronExpression.EVERY_WEEK)
     async checkForUpdatedEpisodesForFinishedAnime() {
-        await this.updateOnCondition({
+        this.updateOnCondition({
             status: {
                 in: ["FINISHED"]
             }
-        })
+        }).then(() => {
+            Logger.debug("Finished checking updates episodes for finished anime");
+        });
     }
 
     async updateOnCondition(condition) {
@@ -211,7 +217,11 @@ export default class InformationModule implements OnApplicationBootstrap {
             }
         });
 
-        await Promise.all(ids.map(id => this.informationService.fetchRelations(id.id)));
+        Promise.all(ids.map(id => this.informationService.fetchRelations(id.id))).then(() => {
+            Logger.debug("Finished updating relations");
+        }).catch(e => {
+            Logger.error(`Error happened while trying to update relations`, e, e.stack);
+        });
     }
 
     @Cron(CronExpression.EVERY_WEEK)
