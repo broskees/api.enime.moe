@@ -76,8 +76,8 @@ export default class InformationModule implements OnApplicationBootstrap {
         });
     }
 
-    // Every 10 minutes, we check anime that have don't have "enough episode" stored in the database (mostly the anime source sites update slower than Anilist because subs stuff) so we sync that part more frequently
-    @Cron(CronExpression.EVERY_HOUR)
+    // Every 20 minutes, we check anime that have don't have "enough episode" stored in the database (mostly the anime source sites update slower than Anilist because subs stuff) so we sync that part more frequently
+    @Cron("*/20 * * * *")
     async checkForUpdatedEpisodes() {
         this.updateOnCondition({
             status: {
@@ -89,7 +89,7 @@ export default class InformationModule implements OnApplicationBootstrap {
     }
 
     // Give a higher priority to anime that are either releasing or finished but there's no episode available
-    @Cron(CronExpression.EVERY_30_MINUTES)
+    @Cron(CronExpression.EVERY_2_HOURS)
     async checkForUpdatedEpisodesForAnimeWithoutEpisodes() {
         this.updateOnCondition({
             status: {
@@ -239,14 +239,5 @@ export default class InformationModule implements OnApplicationBootstrap {
     }
 
     async onApplicationBootstrap() {
-        setTimeout(async () => {
-            await this.queue.add({
-                animeIds: ["cl7u2snsq000ovcluhd992asc"],
-                infoOnly: false
-            }, {
-                priority: 5,
-                removeOnComplete: true
-            });
-        }, 3000)
     }
 }

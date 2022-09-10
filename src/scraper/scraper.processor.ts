@@ -85,7 +85,6 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
 
                     const current = dayjs(new Date());
 
-                    /*
                     if (status === "FINISHED" && current.year() - anime.year > 1 && lastCheckedTimeRaw !== 0 && lastCheckedTime.diff(current, "week") <= 4) {
                         continue;
                     } else if (status === "HIATUS" && !!anime.next) {
@@ -93,7 +92,6 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
 
                         if (next.isAfter(current) && next.diff(current, "day") >= 3) continue;
                     }
-                    */
 
                     let matchedAnimeEntry;
 
