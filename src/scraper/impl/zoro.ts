@@ -12,12 +12,12 @@ export default class Zoro extends Scraper {
     override infoOnly = false;
     override subtitle = true;
     override priority = 2;
-    override consumetServiceUrl = "https://consumet-api.herokuapp.com/anime/zoro/";
+    override consumetServiceUrl = "https://api.consumet.org/anime/zoro";
 
     async getSourceConsumet(sourceUrl: string | URL): Promise<RawSource> {
-        if (typeof sourceUrl === "string") sourceUrl = new URL(sourceUrl);
+        if (sourceUrl instanceof URL) sourceUrl = sourceUrl.href;
 
-        let rawSource = (await axios.get(`${this.consumetServiceUrl}${sourceUrl.pathname.replace("?ep=", "$episode$")}`)).data;
+        let rawSource = (await axios.get(`${this.consumetServiceUrl}/watch?episodeId=${sourceUrl.replace("/watch/", "").replace("?ep=", "$episode$")}`)).data;
 
         let primarySource = rawSource?.sources?.find(source => source.quality === "auto");
 
@@ -28,18 +28,18 @@ export default class Zoro extends Scraper {
         return {
             video: primarySource.url,
             subtitle: subtitle?.url,
-            referer: rawSource.headers.Referer,
+            referer: rawSource?.headers?.Referer,
             browser: true
         }
     }
 
     async getRawSource(sourceUrl, config) {
-        if (!(sourceUrl instanceof URL)) sourceUrl = new URL(sourceUrl);
+        sourceUrl = this.url() + sourceUrl;
 
-        const url = `${this.url()}/ajax/v2/episode/servers?episodeId=${sourceUrl.searchParams.get("ep")}`;
+        const url = `${this.url()}/ajax/v2/episode/servers?episodeId=${new URL(sourceUrl).searchParams.get("ep")}`;
 
         let response = await this.get(url, {
-            Referer: sourceUrl.href,
+            Referer: sourceUrl,
         });
 
         const $ = cheerio.load((await response.data).html);
@@ -60,7 +60,7 @@ export default class Zoro extends Scraper {
             video: video.source.url,
             m3u8: video.source.m3u8,
             subtitle: video.subtitles,
-            referer: sourceUrl.href,
+            referer: sourceUrl,
             browser: true
         };
     }
@@ -84,7 +84,7 @@ export default class Zoro extends Scraper {
             if (excludedNumbers.includes(number)) return;
 
             let title = $(el).attr('title');
-            const url = this.url() + $(el).attr('href');
+            const url = $(el).attr('href');
             const filler = $(el).hasClass('ssl-item-filler');
 
             if (title.startsWith("Episode ")) title = undefined; // What? you seriously put "Episode X" as the episode title???

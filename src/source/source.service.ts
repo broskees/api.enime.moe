@@ -21,19 +21,23 @@ export default class SourceService {
     async getSource(id): Promise<Source> {
         const cacheKey = `source-${id}`;
 
-        let cachedSource = await this.cacheManager.get(cacheKey);
-        if (cachedSource) {
-            let cachedSourceValue = JSON.parse(<string>cachedSource);
+        let cachedSource;
 
-            try {
-                const response = await axios.get(cachedSourceValue.url, {
-                    timeout: 1000,
-                    validateStatus: () => true
-                });
-                if (response.status === 200) return cachedSourceValue;
-                else await this.cacheManager.del(cacheKey);
-            } catch (e) {
-                await this.cacheManager.del(cacheKey);
+        if (process.env.PRODUCTION) {
+            cachedSource = await this.cacheManager.get(cacheKey);
+            if (cachedSource) {
+                let cachedSourceValue = JSON.parse(<string>cachedSource);
+
+                try {
+                    const response = await axios.get(cachedSourceValue.url, {
+                        timeout: 1000,
+                        validateStatus: () => true
+                    });
+                    if (response.status === 200) return cachedSourceValue;
+                    else await this.cacheManager.del(cacheKey);
+                } catch (e) {
+                    await this.cacheManager.del(cacheKey);
+                }
             }
         }
 
@@ -54,18 +58,17 @@ export default class SourceService {
             videoUrl = source.target;
         } else {
             const scraper = (await this.scraperService.scrapers()).find(s => s.websiteMeta.id === source.websiteId);
-            const url = source.referer ? new URL(source.referer.replaceAll("//", "/")) : undefined;
 
             let rawSource;
             try {
                 rawSource = await scraper.getRawSource(source.target, {
-                    referer: url?.href,
+                    referer: source?.referer,
                     ...(this.rapidCloudService.serverId && {
                         serverId: this.rapidCloudService.serverId
                     })
                 });
             } catch (e) {
-                rawSource = await scraper.getSourceConsumet(url || source.target);
+                rawSource = await scraper.getSourceConsumet(source.target);
                 Logger.error(`Error occurred while trying to fetch source ID ${source.id}, falling back to Consumet service`, e);
 
                 if (!rawSource) throw new InternalServerErrorException("Cannot obtain the URL for this source, please contact administrators.");
@@ -89,7 +92,7 @@ export default class SourceService {
             website: source.website.url
         };
 
-        await this.cacheManager.set(cacheKey, JSON.stringify(sourceObject), { ttl: 60 * 60 * 5 }); // 4 hour cache (actual expiry time is ~6 hours but just in case)
+        if (process.env.PRODUCTION) await this.cacheManager.set(cacheKey, JSON.stringify(sourceObject), { ttl: 60 * 60 * 5 }); // 4 hour cache (actual expiry time is ~6 hours but just in case)
 
         return sourceObject;
     }

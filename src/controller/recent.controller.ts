@@ -77,7 +77,8 @@ export default class RecentController {
                             select: {
                                 name: true,
                                 priority: true,
-                                subtitle: true
+                                subtitle: true,
+                                url: true
                             }
                         }
                     }
@@ -92,6 +93,7 @@ export default class RecentController {
                 return {
                     id: source.id,
                     website: source.website.name,
+                    url: source.website.url,
                     priority: source.website.priority,
                     subtitle: source.website.subtitle
                 }

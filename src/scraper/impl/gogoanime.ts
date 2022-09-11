@@ -11,11 +11,11 @@ export default class GogoanimeScraper extends Scraper {
     override enabled = true;
     override infoOnly = false;
     override priority = 1;
-    override consumetServiceUrl = "https://consumet-api.herokuapp.com/anime/gogoanime/";
+    override consumetServiceUrl = "https://api.consumet.org/anime/gogoanime";
 
     async getSourceConsumet(sourceUrl: string | URL): Promise<RawSource> {
-        if (typeof sourceUrl === "string") sourceUrl = new URL(sourceUrl);
-        let response = (await axios.get(`${this.consumetServiceUrl}${sourceUrl.pathname}`)).data;
+        console.log(`${this.consumetServiceUrl}/watch${sourceUrl}`)
+        let response = (await axios.get(`${this.consumetServiceUrl}/watch${sourceUrl}`)).data;
         let rawSourceUrl = response?.sources[0]?.url;
 
         return {
@@ -27,12 +27,23 @@ export default class GogoanimeScraper extends Scraper {
     }
 
     override async getRawSource(sourceUrl): Promise<RawSource> {
-        const url = sourceUrl instanceof URL ? sourceUrl : new URL(sourceUrl);
-        const video = await (new GogoCDN().extract(url));
+        const url = this.url() + sourceUrl;
+
+        let embedResponse = this.get(url);
+        let embedResponseText = await (await embedResponse).data;
+
+        let $$ = cheerio.load(embedResponseText);
+
+        let embedUrl = $$("iframe").first().attr("src");
+        if (!embedUrl) return undefined;
+
+        if (!embedUrl.startsWith("https:")) embedUrl = "https:" + embedUrl;
+
+        const video = await (new GogoCDN().extract(new URL(embedUrl)));
 
         return {
             video: video.url,
-            referer: url.href,
+            referer: embedUrl,
             browser: true
         }
     }
@@ -61,7 +72,7 @@ export default class GogoanimeScraper extends Scraper {
 
             episodesSource.push({
                 number: number,
-                url: `${this.url()}${$(el).find(`a`).attr('href')?.trim()}`,
+                url: $(el).find(`a`).attr('href')?.trim(),
             });
         });
 
@@ -70,6 +81,7 @@ export default class GogoanimeScraper extends Scraper {
         for (let episode of episodesSource) {
             if (!episode.url) continue;
 
+            /*
             let embedResponse = this.get(episode.url, {});
             let embedResponseText = await (await embedResponse).data;
 
@@ -78,13 +90,14 @@ export default class GogoanimeScraper extends Scraper {
             let embedUrl = $$("iframe").first().attr("src");
 
             if (!embedUrl) continue;
+             */
 
             episodesMapped.push({
                 ...episode,
-                url: `https:${embedUrl}`,
+                url: episode.url,
                 title: undefined,
                 format: "m3u8",
-                referer: episode.url,
+                referer: undefined,
                 type: SourceType.PROXY
             });
         }
