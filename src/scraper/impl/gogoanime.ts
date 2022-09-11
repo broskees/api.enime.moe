@@ -14,7 +14,6 @@ export default class GogoanimeScraper extends Scraper {
     override consumetServiceUrl = "https://api.consumet.org/anime/gogoanime";
 
     async getSourceConsumet(sourceUrl: string | URL): Promise<RawSource> {
-        console.log(`${this.consumetServiceUrl}/watch${sourceUrl}`)
         let response = (await axios.get(`${this.consumetServiceUrl}/watch${sourceUrl}`)).data;
         let rawSourceUrl = response?.sources[0]?.url;
 
