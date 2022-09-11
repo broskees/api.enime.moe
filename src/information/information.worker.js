@@ -3,11 +3,12 @@ import { GraphQLClient } from 'graphql-request';
 
 const anilistBaseEndpoint = "https://graphql.anilist.co";
 
-function getClient() {
-    return new GraphQLClient(anilistBaseEndpoint, {
+function getClient(proxy = false) {
+    return new GraphQLClient(proxy ? `https://proxy.enime.moe?url=${encodeURIComponent(anilistBaseEndpoint)}` : anilistBaseEndpoint, {
         headers: {
             "Content-Type": "application/json",
-            "Accept": "application/json"
+            "Accept": "application/json",
+            "x-api-key": process.env.PROXY_API_KEY
         }
     });
 }
@@ -65,7 +66,7 @@ export async function loadAnimeFromAnilist({ condition, includePrevious = true }
 }
 
 export async function fetchAnilistAnime({ anilistId }) {
-    const client = getClient();
+    const client = getClient(true);
 
     let animeList = await client.request(SPECIFIC_ANIME, {
         id: anilistId
@@ -75,12 +76,10 @@ export async function fetchAnilistAnime({ anilistId }) {
 }
 
 export async function fetchAnilistEdges({ anime, preloaded = undefined }) {
-    let animeList;
-    if (!preloaded) {
-        animeList = await fetchAnilistAnime({ anilistId: anime.anilistId });
+    let anilistAnime = preloaded;
+    if (!anilistAnime) {
+        anilistAnime = (await fetchAnilistAnime({ anilistId: anime.anilistId }));
     }
 
-    const anilistAnime = preloaded || animeList?.Page?.media[0];
-
-    return anilistAnime.relations.edges;
+    return anilistAnime?.relations?.edges;
 }

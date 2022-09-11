@@ -14,6 +14,12 @@ export default class Source {
     url: string;
 
     @ApiProperty({
+        description: "Source target",
+        example: "/lycoris-recoil-episode-1"
+    })
+    target: string;
+
+    @ApiProperty({
         description: "The source priority, some sources are verified to be more stable than others, higher priority usually means more stability",
         example: 1
     })

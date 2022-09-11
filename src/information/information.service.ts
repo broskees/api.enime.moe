@@ -97,71 +97,69 @@ export default class InformationService implements OnApplicationBootstrap {
             })
         }));
 
-        return await this.databaseService.$transaction(async (prisma) => {
-            const internalParsedRelations = [];
+        const parsedRelations = [];
 
-            for (let r of relations) {
-                let forwardRelation = await prisma.relation.findUnique({
-                    where: {
-                        type_animeId: {
-                            animeId: r.id,
-                            type: r.type
+        for (let r of relations) {
+            let forwardRelation = await this.databaseService.relation.findUnique({
+                where: {
+                    type_animeId: {
+                        animeId: r.id,
+                        type: r.type
+                    }
+                }
+            });
+
+            if (!forwardRelation) {
+                forwardRelation = await this.databaseService.relation.create({
+                    data: {
+                        animeId: r.id,
+                        type: r.type,
+                        linked: {
+                            connect: {
+                                id: anime.id
+                            }
                         }
                     }
-                });
-
-                if (!forwardRelation) {
-                    forwardRelation = await prisma.relation.create({
-                        data: {
-                            animeId: r.id,
-                            type: r.type,
-                            linked: {
-                                connect: {
-                                    id: anime.id
-                                }
+                })
+            } else {
+                forwardRelation = await this.databaseService.relation.update({
+                    where: {
+                        id: forwardRelation.id
+                    },
+                    data: {
+                        linked: {
+                            connect: {
+                                id: anime.id
                             }
                         }
-                    })
-                } else {
-                    forwardRelation = await prisma.relation.update({
-                        where: {
-                            id: forwardRelation.id
-                        },
-                        data: {
-                            linked: {
-                                connect: {
-                                    id: anime.id
-                                }
-                            }
-                        }
-                    })
-                }
-
-                try { // Ignore Prisma's complain about "unique constraint violation", there is no way this can be non-unique I'm not sure why Prisma is complaining so
-                    prisma.anime.update({
-                        where: {
-                            id: anime.id
-                        },
-                        data: {
-                            linkedRelations: {
-                                connect: {
-                                    id: forwardRelation.id,
-                                    type_animeId: {
-                                        animeId: forwardRelation.animeId,
-                                        type: forwardRelation.type
-                                    }
-                                }
-                            }
-                        }
-                    })
-                } catch (e) {
-
-                }
-                internalParsedRelations.push(forwardRelation);
+                    }
+                })
             }
 
-            return internalParsedRelations;
-        });
+            try { // Ignore Prisma's complain about "unique constraint violation", there is no way this can be non-unique I'm not sure why Prisma is complaining so
+                await this.databaseService.anime.update({
+                    where: {
+                        id: anime.id
+                    },
+                    data: {
+                        linkedRelations: {
+                            connect: {
+                                id: forwardRelation.id,
+                                type_animeId: {
+                                    animeId: forwardRelation.animeId,
+                                    type: forwardRelation.type
+                                }
+                            }
+                        }
+                    }
+                })
+            } catch (e) {
+
+            }
+            parsedRelations.push(forwardRelation);
+        }
+
+        return parsedRelations;
     }
 
     async resyncAnime(ids: string[] | undefined = undefined) {
