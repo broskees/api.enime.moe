@@ -77,7 +77,8 @@ export default class EpisodeService {
                             select: {
                                 name: true,
                                 priority: true,
-                                subtitle: true
+                                subtitle: true,
+                                url: true
                             }
                         }
                     }
@@ -92,6 +93,7 @@ export default class EpisodeService {
                 id: source.id,
                 target: source.target,
                 priority: source.website.priority,
+                url: source.website.url
             }
         });
 

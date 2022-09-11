@@ -1,10 +1,9 @@
-import { CacheTTL, Controller, Get, NotFoundException, Param, Query, UseInterceptors } from '@nestjs/common';
+import { CacheTTL, Controller, Get, NotFoundException, Param, Query } from '@nestjs/common';
 import DatabaseService from '../database/database.service';
 import { SkipThrottle } from '@nestjs/throttler';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import Anime from '../entity/anime.entity';
 import Episode from '../entity/episode.entity';
-import EpisodeService from '../episode/episode.service';
 
 @SkipThrottle()
 @Controller("/anime")
@@ -51,7 +50,13 @@ export default class AnimeController {
                         sources: {
                             select: {
                                 id: true,
-                                target: true
+                                target: true,
+                                website: {
+                                    select: {
+                                        priority: true,
+                                        url: true
+                                    }
+                                }
                             }
                         }
                     }
@@ -64,7 +69,21 @@ export default class AnimeController {
         anime.episodes = anime.episodes.filter(episode => episode.sources?.length).sort((a, b) => a.number - b.number);
 
         // @ts-ignore
-        return anime.episodes;
+        return anime.episodes.map(episode => {
+            const sources = episode.sources.map(source => {
+                return {
+                    id: source.id,
+                    target: source.target,
+                    priority: source.website.priority,
+                    url: source.website.url
+                }
+            });
+
+            return {
+                ...episode,
+                sources: sources
+            }
+        });
     }
 
     @Get(":id")
