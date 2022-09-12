@@ -42,7 +42,8 @@ export default abstract class Scraper {
                 ...headers,
                 "User-Agent": USER_AGENT
             },
-            timeout: 2000
+            timeout: 2000,
+            validateStatus: () => true
         }
         return axios.get(url, requestConfig);
     }

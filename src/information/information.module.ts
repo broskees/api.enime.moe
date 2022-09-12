@@ -134,7 +134,8 @@ export default class InformationModule implements OnApplicationBootstrap {
             return anime.currentEpisode !== anime.episodes.filter(episode => episode.sources.length === scrapers.filter(scraper => !scraper.infoOnly && scraper.enabled).length).length
         });
 
-        const chunkedAnimeList = chunkArray(animeList, 50);
+        console.log(animeList)
+        const chunkedAnimeList = chunkArray(animeList, 100);
 
         for (let animeList of chunkedAnimeList) {
             await this.queue.add( { // Episode number are unique values, we can safely assume "if the current episode progress count is not even equal to the amount of episodes we have in database, the anime entry should be outdated"
