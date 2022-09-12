@@ -235,11 +235,7 @@ export default class InformationService implements OnApplicationBootstrap {
         if (nextEpisode) {
             currentEpisode = nextEpisode.episode - 1;
             nextEpisode = dayjs.unix(nextEpisode.airingAt).utc().toISOString();
-        } else {
-            if (anilistAnime.status === "FINISHED") {
-                currentEpisode = anilistAnime.episodes;
-            }
-        }
+        } else currentEpisode = anilistAnime.episodes;
 
         let mappingObject = undefined;
 
@@ -373,8 +369,12 @@ export default class InformationService implements OnApplicationBootstrap {
         return animeDbUpdateId || animeDb.id;
     }
 
-    async loadAnimeFromAnilist(condition, includePrevious = true) {
-        const trackingAnime = await this.piscina.run({ condition: condition, includePrevious: includePrevious }, { name: "loadAnimeFromAnilist" });
+    async loadAnimeFromAnilist(condition, config = {
+        includePrevious: true,
+        loadRelation: true,
+        updateReleasingOnly: true
+    }) {
+        const trackingAnime = await this.piscina.run({ condition: condition, includePrevious: config.includePrevious }, { name: "loadAnimeFromAnilist" });
 
         let response = await Promise.allSettled(trackingAnime.map(anime => {
             return new Promise((resolve, reject) => {
@@ -403,7 +403,7 @@ export default class InformationService implements OnApplicationBootstrap {
                                     }
                                 })];
 
-                                if (animeDb.status === "RELEASING" && animeDbObject.currentEpisode > animeDb.currentEpisode) {
+                                if (!config.updateReleasingOnly || (animeDb.status === "RELEASING" && animeDbObject.currentEpisode > animeDb.currentEpisode)) {
                                     // @ts-ignore
                                     promises.push(this.databaseService.episode.upsert({
                                         where: {
@@ -447,7 +447,7 @@ export default class InformationService implements OnApplicationBootstrap {
         // @ts-ignore
         response = response.filter(r => r.status === "fulfilled").map(r => r.value);
 
-        await Promise.all(trackingAnime.map(anime => this.fetchRelations(anime.id, anime)));
+        if (config.loadRelation) await Promise.all(trackingAnime.map(anime => this.fetchRelations(anime.id, anime)));
 
         // @ts-ignore
         this.eventEmitter.emit("anime.refetch", new AnimeRefetchEvent(false, response.filter(r => r.requireUpdate).map(r => r.id)), response.filter(r => r.created).map(r => r.id));
@@ -462,6 +462,6 @@ export default class InformationService implements OnApplicationBootstrap {
             // season: this.seasons[currentSeason],
             format: "TV",
             status: "RELEASING"
-        }, true);
+        });
     }
 }

@@ -110,7 +110,7 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
 
                                 matchedAnimeEntry = {
                                     title: malSyncEntry.title,
-                                    path: (new URL(malSyncEntry.url)).pathname?.replace("gogoanime.lu", "gogoanime.ee")
+                                    path: (new URL(malSyncEntry.url)).pathname
                                 }
                             }
                         }
@@ -127,7 +127,7 @@ export default async function (job: Job<ScraperJobData>, cb: DoneCallback) {
 
                     const episodesWithSourceTransactions = [];
 
-                    if (!Number.isNaN(anime.currentEpisode)) {
+                    if (!Number.isNaN(anime.currentEpisode) && anime.currentEpisode > 0) {
                         for (let i = 0; i <= anime.currentEpisode; i++) {
                             episodesWithSourceTransactions.push(databaseService.episode.findUnique({
                                 where: {
