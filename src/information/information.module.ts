@@ -134,7 +134,6 @@ export default class InformationModule implements OnApplicationBootstrap {
             return anime.currentEpisode !== anime.episodes.filter(episode => episode.sources.length === scrapers.filter(scraper => !scraper.infoOnly && scraper.enabled).length).length
         });
 
-        console.log(animeList)
         const chunkedAnimeList = chunkArray(animeList, 100);
 
         for (let animeList of chunkedAnimeList) {
