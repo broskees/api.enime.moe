@@ -403,7 +403,7 @@ export default class InformationService implements OnApplicationBootstrap {
                                     }
                                 })];
 
-                                if (!config.updateReleasingOnly || (animeDb.status === "RELEASING" && animeDbObject.currentEpisode > animeDb.currentEpisode)) {
+                                if (animeDb.status === "RELEASING" && animeDbObject.currentEpisode > animeDb.currentEpisode) {
                                     // @ts-ignore
                                     promises.push(this.databaseService.episode.upsert({
                                         where: {
