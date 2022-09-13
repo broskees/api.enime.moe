@@ -9,7 +9,7 @@ export default class TmdbMetaProvider extends MetaProvider {
     private tmdbApiUrl = "https://api.themoviedb.org/3/";
     private tmdbImageUrl = "https://image.tmdb.org/t/p/original";
 
-    override async loadMeta(anime, excludedEpisodes, parsedMapping): Promise<AnimeMeta> {
+    override async loadMeta(anime, excludedEpisodes, parsedMapping, force = false): Promise<AnimeMeta> {
         // @ts-ignore
         const aniDbId = anime?.mappings?.anidb;
         if (!aniDbId) return undefined;

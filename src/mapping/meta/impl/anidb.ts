@@ -14,7 +14,7 @@ export default class AnidbProvider extends MetaProvider {
     private readonly baseUrl = "https://anidb.net";
     private readonly animeUrl = this.baseUrl + "/anime/{anidbId}";
 
-    override async loadMeta(anime, excludedEpisodes): Promise<AnimeMeta> {
+    override async loadMeta(anime, excludedEpisodes, parsedMapping, force = false): Promise<AnimeMeta> {
         // @ts-ignore
         const aniDbId = anime?.mappings?.anidb;
         if (!aniDbId) return undefined;

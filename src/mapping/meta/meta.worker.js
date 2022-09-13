@@ -2,7 +2,7 @@ import TvdbMetaProvider from './impl/tvdb';
 import AnidbMetaProvider from './impl/anidb';
 import TmdbMetaProvider from './impl/tmdb';
 
-export async function loadMeta({ name, anime, excluded, mapping }) {
+export async function loadMeta({ name, anime, excluded, mapping, force = false }) {
     let provider;
     if (name === "TvDB") provider = new TvdbMetaProvider();
     else if (name === "TmDB") provider = new TmdbMetaProvider();
@@ -10,5 +10,5 @@ export async function loadMeta({ name, anime, excluded, mapping }) {
 
     if (!provider) return undefined;
 
-    return await provider.loadMeta(anime, excluded, mapping);
+    return await provider.loadMeta(anime, excluded, mapping, force);
 }

@@ -18,7 +18,7 @@ export default class TvdbProvider extends MetaProvider {
     private readonly imdbBaseUrl = "https://www.imdb.com";
     private readonly imdbSeriesUrl = this.imdbBaseUrl + "/title/";
 
-    override async loadMeta(anime, excludedEpisodes, parsedMapping): Promise<AnimeMeta> {
+    override async loadMeta(anime, excludedEpisodes, parsedMapping, force = false): Promise<AnimeMeta> {
         // @ts-ignore
         const aniDbId = anime?.mappings?.anidb;
         if (!aniDbId) return undefined;
@@ -76,7 +76,7 @@ export default class TvdbProvider extends MetaProvider {
             for (let episodeDb of anime.episodes) {
                 if (excludedEpisodes.includes(episodeDb.number)) continue;
 
-                if (episodeDb.image && episodeDb.title && episodeDb.description && episodeDb.titleVariations && episodeDb.airedAt) {
+                if (!force && episodeDb.image && episodeDb.title && episodeDb.description && episodeDb.titleVariations && episodeDb.airedAt) {
                     episodeMetas.push({
                         image: episodeDb.image,
                         // @ts-ignore

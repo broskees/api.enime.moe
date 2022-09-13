@@ -58,7 +58,7 @@ export default class MetaService implements OnModuleInit {
         }
     }
 
-    async synchronize(anime, useBackup = true) {
+    async synchronize(anime, useBackup = true, force = false) {
         const parsedMapping = await this.loadMapping();
 
         if (!anime.episodes) anime = await this.databaseService.anime.findUnique({
@@ -73,10 +73,10 @@ export default class MetaService implements OnModuleInit {
         if (anime.format === "MOVIE") return;
 
         const episodeInfos = {};
-        let excludedEpisodes = anime.episodes.filter(e => e.titleVariations && e.title && e.description && e.airedAt && e.image).map(e => e.number);
+        let excludedEpisodes = force ? [] : anime.episodes.filter(e => e.titleVariations && e.title && e.description && e.airedAt && e.image).map(e => e.number);
 
         const load = async (provider, anime, excluded = undefined) => {
-            const animeMeta = await this.piscina.run({ name: provider.name, anime: anime, excluded: excluded, mapping: parsedMapping }, { name: "loadMeta" });
+            const animeMeta = await this.piscina.run({ name: provider.name, anime: anime, excluded: excluded, mapping: parsedMapping, force: force }, { name: "loadMeta" });
             if (!animeMeta) return [];
 
             for (let episodeMeta of animeMeta.episodes) {
