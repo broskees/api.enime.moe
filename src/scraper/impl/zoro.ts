@@ -50,11 +50,13 @@ export default class Zoro extends Scraper {
 
         if (!serverId) return undefined;
 
-        response = await this.get(`${this.url()}/ajax/v2/episode/sources?id=${serverId}`, {});
+        response = await this.get(`${this.url()}/ajax/v2/episode/sources?id=${serverId}`, {
+            "Referer": sourceUrl
+        });
 
         const videoUrl = new URL((await response.data).link);
 
-        const video = await (new RapidCloud(config.serverId).extract(videoUrl));
+        const video = await (new RapidCloud(config.serverId).extract(videoUrl, url));
 
         return {
             video: video.source.url,
