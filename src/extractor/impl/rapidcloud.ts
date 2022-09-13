@@ -8,10 +8,9 @@ class RapidCloud extends VideoExtractor {
     protected override serverName = 'RapidCloud';
     protected override sources: IVideo[] = [];
 
-    private readonly key = "06a641c0e5111449";
     private readonly host = 'https://rapid-cloud.co';
 
-    constructor(private readonly serverId) {
+    constructor(private readonly serverId, private readonly decryptionKey) {
         super();
     }
 
@@ -37,7 +36,7 @@ class RapidCloud extends VideoExtractor {
 
             let sources = res.sources;
             if (res.encrypted) {
-                sources = JSON.parse(CryptoJS.AES.decrypt(sources, this.key).toString(CryptoJS.enc.Utf8));
+                sources = JSON.parse(CryptoJS.AES.decrypt(sources, this.decryptionKey).toString(CryptoJS.enc.Utf8));
             }
 
             return {

@@ -56,7 +56,7 @@ export default class Zoro extends Scraper {
 
         const videoUrl = new URL((await response.data).link);
 
-        const video = await (new RapidCloud(config.serverId).extract(videoUrl, url));
+        const video = await (new RapidCloud(config.serverId, config.decryptionKey).extract(videoUrl, url));
 
         return {
             video: video.source.url,

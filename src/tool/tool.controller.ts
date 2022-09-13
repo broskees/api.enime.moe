@@ -34,4 +34,9 @@ export default class ToolController {
     async rapidCloudServerId() {
         return this.rapidCloudService.serverId;
     }
+
+    @Get("/rapid-cloud/decryption-key")
+    async rapidCloudDecryptionKey() {
+        return this.rapidCloudService.decryptionKey;
+    }
 }

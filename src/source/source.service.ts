@@ -63,8 +63,9 @@ export default class SourceService {
             try {
                 rawSource = await scraper.getRawSource(source.target, {
                     referer: source?.referer,
-                    ...(this.rapidCloudService.serverId && {
-                        serverId: this.rapidCloudService.serverId
+                    ...(this.rapidCloudService && {
+                        serverId: this.rapidCloudService.serverId,
+                        decryptionKey: this.rapidCloudService.decryptionKey
                     })
                 });
             } catch (e) {
@@ -94,6 +95,7 @@ export default class SourceService {
 
         if (process.env.PRODUCTION) await this.cacheManager.set(cacheKey, JSON.stringify(sourceObject), { ttl: 60 * 60 * 5 }); // 4 hour cache (actual expiry time is ~6 hours but just in case)
 
+        // @ts-ignore
         return sourceObject;
     }
 }

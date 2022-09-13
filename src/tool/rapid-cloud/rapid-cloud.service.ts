@@ -6,21 +6,27 @@ import ReconnectingWebSocket from 'reconnecting-websocket';
 import { RedisCache } from '../../redis/redis.interface';
 import * as util from 'util';
 import { RedisClient } from 'redis';
+import axios from 'axios';
 
 @Injectable()
 export default class RapidCloudService implements OnModuleInit {
     public serverId: string;
+    public decryptionKey: string;
+
     private websocket: ReconnectingWebSocket;
     private intervalId;
 
     private readonly redisClient: RedisClient;
     private readonly host = "wss://ws1.rapid-cloud.co/socket.io/?EIO=4&transport=websocket";
 
+    private readonly decryptionKeyFlow = "https://raw.githubusercontent.com/Enime-Project/rapid-flow/master/seyk";
+
     constructor(@Inject(CACHE_MANAGER) private readonly cacheManager: RedisCache) {
         this.redisClient = this.cacheManager.store.getClient();
     }
 
     async onModuleInit() {
+        await this.refreshDecryptionKey();
         await this.refreshServerId();
     }
 
@@ -49,6 +55,11 @@ export default class RapidCloudService implements OnModuleInit {
                 // Not json, pass
             }
         }
+    }
+
+    @Cron(CronExpression.EVERY_10_MINUTES)
+    async refreshDecryptionKey() {
+        this.decryptionKey = (await axios.get(this.decryptionKeyFlow)).data;
     }
 
     @Cron(CronExpression.EVERY_2_HOURS)
