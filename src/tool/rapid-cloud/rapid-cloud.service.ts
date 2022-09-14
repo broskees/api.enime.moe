@@ -19,7 +19,7 @@ export default class RapidCloudService implements OnModuleInit {
     private readonly redisClient: RedisClient;
     private readonly host = "wss://ws1.rapid-cloud.co/socket.io/?EIO=4&transport=websocket";
 
-    private readonly decryptionKeyFlow = "https://raw.githubusercontent.com/Enime-Project/rapid-flow/master/seyk";
+    private readonly decryptionKeyFlow = "https://worker.enime.moe/rapid-cloud/decryption-key";
 
     constructor(@Inject(CACHE_MANAGER) private readonly cacheManager: RedisCache) {
         this.redisClient = this.cacheManager.store.getClient();
@@ -59,7 +59,11 @@ export default class RapidCloudService implements OnModuleInit {
 
     @Cron(CronExpression.EVERY_10_MINUTES)
     async refreshDecryptionKey() {
-        this.decryptionKey = (await axios.get(this.decryptionKeyFlow)).data;
+        this.decryptionKey = (await axios.get(this.decryptionKeyFlow, {
+            headers: {
+                "x-api-key": process.env.WORKER_API_KEY
+            }
+        })).data;
     }
 
     @Cron(CronExpression.EVERY_2_HOURS)
