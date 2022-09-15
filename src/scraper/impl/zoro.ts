@@ -17,7 +17,7 @@ export default class Zoro extends Scraper {
     async getSourceConsumet(sourceUrl: string | URL): Promise<RawSource> {
         if (sourceUrl instanceof URL) sourceUrl = sourceUrl.href;
 
-        let rawSource = (await axios.get(`${this.consumetServiceUrl}/watch?episodeId=${sourceUrl.replace("/watch/", "").replace("?ep=", "$episode$")}`)).data;
+        let rawSource = (await this.get(`${this.consumetServiceUrl}/watch?episodeId=${sourceUrl.replace("/watch/", "").replace("?ep=", "$episode$")}`)).data;
 
         let primarySource = rawSource?.sources?.find(source => source.quality === "auto");
 
@@ -43,7 +43,7 @@ export default class Zoro extends Scraper {
         });
 
         const $ = cheerio.load((await response.data).html);
-        const serverId = $('div.ps_-block.ps_-block-sub.servers-sub > div.ps__-list > div')
+        const serverId = $('div.ps__-list > div')
             .map((i, el) => ($(el).attr("data-server-id") == "1" ? $(el) : null))
             .get()[0]
             .attr("data-id")!;
