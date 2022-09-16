@@ -29,7 +29,7 @@ export default class SourceService {
                 let cachedSourceValue = JSON.parse(<string>cachedSource);
 
                 try {
-                    const response = await axios.get(cachedSourceValue.url, {
+                    const response = await axios.head(cachedSourceValue.url, {
                         timeout: 1000,
                         validateStatus: () => true
                     });
