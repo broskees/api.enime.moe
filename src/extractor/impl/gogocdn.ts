@@ -53,7 +53,11 @@ class GogoCDN extends VideoExtractor {
             });
         });
 
-        return this.sources[0];
+        // @ts-ignore
+        const hasM3u8 = this.sources.some(source => source.file?.endsWith(".m3u8") || source.type === "hls");
+
+        // @ts-ignore
+        return hasM3u8 ? this.sources.filter(source => source.file?.endsWith(".m3u8") || source.type === "hls")[0] : this.sources[0];
     }
 
     private generateEncryptedAjaxParams = async (text, id: string): Promise<string> => {
