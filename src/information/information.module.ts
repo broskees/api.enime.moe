@@ -42,6 +42,24 @@ export default class InformationModule implements OnApplicationBootstrap {
         });
     }
 
+    @Cron(CronExpression.EVERY_6_HOURS)
+    async updateReleasingAnime() {
+        Logger.debug("Now we start synchronizing non-finished anime from database to make them up-to-date with Anilist");
+        performance.mark("information-non-finished-info-update-start");
+
+        this.informationService.updateAnime({
+            status: {
+                in: ["RELEASING", "CANCELLED", "HIATUS"]
+            }
+        }).then(() => {
+            performance.mark("information-non-finished-info-update-end");
+
+            Logger.debug(`Scheduled synchronizing non-finished anime info with anilist finished, spent ${performance.measure("information-non-finished-info-update", "information-non-finished-info-update-start", "information-non-finished-info-update-end").duration.toFixed(2)}ms`)
+        }).catch(error => {
+            Logger.error(`Scheduled synchronizing non-finished anime info with anilist resulted in an error: ${error}`);
+        });
+    }
+
     @Cron(CronExpression.EVERY_12_HOURS)
     async resyncAnime() {
         Logger.debug("Now we start scheduled resync for all anime");
@@ -239,5 +257,6 @@ export default class InformationModule implements OnApplicationBootstrap {
     }
 
     async onApplicationBootstrap() {
+        this.updateReleasingAnime();
     }
 }

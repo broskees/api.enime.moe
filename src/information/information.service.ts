@@ -289,8 +289,8 @@ export default class InformationService implements OnApplicationBootstrap {
         };
     }
 
-    async fetchAnimeByAnilistIDBatch(anilistIds) {
-        anilistIds = anilistIds.filter(async anilistId => await this.databaseService.anime.findUnique({
+    async fetchAnimeByAnilistIDBatch(anilistIds, skipCheck = false) {
+        if (!skipCheck) anilistIds = anilistIds.filter(async anilistId => await this.databaseService.anime.findUnique({
             where: {
                 anilistId: anilistId
             }
@@ -371,8 +371,7 @@ export default class InformationService implements OnApplicationBootstrap {
 
     async loadAnimeFromAnilist(condition, config = {
         includePrevious: true,
-        loadRelation: true,
-        updateReleasingOnly: true
+        loadRelation: true
     }) {
         const trackingAnime = await this.piscina.run({ condition: condition, includePrevious: config.includePrevious }, { name: "loadAnimeFromAnilist" });
 
@@ -451,6 +450,14 @@ export default class InformationService implements OnApplicationBootstrap {
 
         // @ts-ignore
         this.eventEmitter.emit("anime.refetch", new AnimeRefetchEvent(false, response.filter(r => r.requireUpdate).map(r => r.id)), response.filter(r => r.created).map(r => r.id));
+    }
+
+    async updateAnime(condition) {
+        const animeList = await this.databaseService.anime.findMany({
+            where: condition
+        });
+
+        await this.fetchAnimeByAnilistIDBatch(animeList.map(anime => anime.anilistId), true);
     }
 
     async refetchAnime() {
