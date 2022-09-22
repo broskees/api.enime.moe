@@ -24,7 +24,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     exports: [InformationService]
 })
 export default class InformationModule implements OnApplicationBootstrap {
-    constructor(@InjectQueue("scrape") private readonly queue: Queue, private readonly databaseService: DatabaseService, private readonly informationService: InformationService, private readonly scraperService: ScraperService) {
+    constructor(private readonly databaseService: DatabaseService, private readonly informationService: InformationService, private readonly scraperService: ScraperService) {
         if (!process.env.TESTING) dayjs.extend(utc);
     }
 
@@ -101,8 +101,8 @@ export default class InformationModule implements OnApplicationBootstrap {
             status: {
                 in: ["RELEASING"]
             }
-        }).then(() => {
-            Logger.debug("Finished checking updates episodes for releasing anime");
+        }, 2).then(() => {
+            Logger.debug("Finished checking updated episodes for releasing anime");
         });
     }
 
@@ -114,8 +114,8 @@ export default class InformationModule implements OnApplicationBootstrap {
                 in: ["FINISHED"]
             },
             lastEpisodeUpdate: null
-        }).then(() => {
-            Logger.debug("Finished checking updates episodes for anime without episodes");
+        }, 5).then(() => {
+            Logger.debug("Finished checking updated episodes for anime without episodes");
         });
     }
 
@@ -126,11 +126,11 @@ export default class InformationModule implements OnApplicationBootstrap {
                 in: ["FINISHED"]
             }
         }).then(() => {
-            Logger.debug("Finished checking updates episodes for finished anime");
+            Logger.debug("Finished checking updated episodes for finished anime");
         });
     }
 
-    async updateOnCondition(condition) {
+    async updateOnCondition(condition, priority = 6) {
         let animeList = await this.databaseService.anime.findMany({
             where: {
                 ...condition
@@ -152,44 +152,8 @@ export default class InformationModule implements OnApplicationBootstrap {
             return anime.currentEpisode !== anime.episodes.filter(episode => episode.sources.length === scrapers.filter(scraper => !scraper.infoOnly && scraper.enabled).length).length
         });
 
-        const chunkedAnimeList = chunkArray(animeList, 100);
-
-        for (let animeList of chunkedAnimeList) {
-            await this.queue.add( { // Episode number are unique values, we can safely assume "if the current episode progress count is not even equal to the amount of episodes we have in database, the anime entry should be outdated"
-                animeIds: animeList.map(anime => anime.id),
-                infoOnly: false
-            }, {
-                priority: 6,
-                removeOnComplete: true
-            });
-        }
+        await this.informationService.addToScrapeQueue(animeList.map(anime => anime.id), priority);
     }
-
-    /*
-    @Cron(CronExpression.EVERY_HOUR)
-    async refreshAnimeInfo() {
-        const animeList = await this.databaseService.anime.findMany({
-            where: {
-                episodes: {
-                    some: {
-                        title: null
-                    }
-                }
-            },
-            select: {
-                id: true
-            }
-        });
-
-        await this.queue.add( {
-            animeIds: animeList.map(anime => anime.id),
-            infoOnly: true
-        }, {
-            priority: 6,
-            removeOnComplete: true
-        });
-    }
-     */
 
     @Cron(CronExpression.EVERY_12_HOURS)
     async updateRelations() {
@@ -247,15 +211,10 @@ export default class InformationModule implements OnApplicationBootstrap {
             }
         });
 
-        await this.queue.add({
-            animeIds: eligibleToScrape.map(anime => anime.id),
-            infoOnly: false
-        }, {
-            priority: 5,
-            removeOnComplete: true
-        });
+        await this.informationService.addToScrapeQueue(eligibleToScrape.map(anime => anime.id), 5);
     }
 
     async onApplicationBootstrap() {
+        await this.checkForUpdatedEpisodes();
     }
 }

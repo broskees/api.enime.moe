@@ -41,15 +41,7 @@ export default class InformationService implements OnApplicationBootstrap {
 
     @OnEvent("anime.refetch", { async: true })
     async handleAnimeRefetchEvent(event: AnimeRefetchEvent) {
-        if (event.animeIds?.length) {
-            await this.queue.add( {
-                animeIds: event.animeIds,
-                infoOnly: false
-            }, {
-                priority: event.specific ? 1 : 4,
-                removeOnComplete: true
-            });
-        }
+        if (event.animeIds?.length) await this.addToScrapeQueue(event.animeIds, event.specific ? 1 : 4);
 
         if (event.createdAnimeIds?.length) {
             this.resyncAnime(event.createdAnimeIds).then(() => {
@@ -58,6 +50,18 @@ export default class InformationService implements OnApplicationBootstrap {
                 Logger.error(`Newly created anime(s) failed ot resync: ${error}`);
             });
         }
+    }
+
+    async addToScrapeQueue(animeId: string | string[], priority = 1, infoOnly = false) {
+        await this.queue.add({
+            animeIds: Array.isArray(animeId) ? animeId : [animeId],
+            infoOnly: false
+        }, {
+            priority: priority,
+            removeOnComplete: true,
+            removeOnFail: true,
+            timeout: 60 * 60 * 1000 // 1-hour job timeout
+        });
     }
 
     async fetchRelations(id: string | number, preloaded = undefined) {
@@ -363,7 +367,10 @@ export default class InformationService implements OnApplicationBootstrap {
 
             animeDbUpdateId = id;
 
-            if (!animeDb) await this.fetchRelations(id, anilistAnime);
+            if (!animeDb) {
+                await this.fetchRelations(id, anilistAnime);
+                this.eventEmitter.emit("anime.refetch", new AnimeRefetchEvent(true, [id], [id]));
+            }
         }
 
         return animeDbUpdateId || animeDb.id;
