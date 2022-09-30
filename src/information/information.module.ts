@@ -24,8 +24,11 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     exports: [InformationService]
 })
 export default class InformationModule implements OnApplicationBootstrap {
+    private readonly seasons: string[];
+
     constructor(private readonly databaseService: DatabaseService, private readonly informationService: InformationService, private readonly scraperService: ScraperService) {
         if (!process.env.TESTING) dayjs.extend(utc);
+        this.seasons = ["WINTER", "SPRING", "SUMMER", "FALL"];
     }
 
     @Cron(CronExpression.EVERY_10_MINUTES)
@@ -108,11 +111,30 @@ export default class InformationModule implements OnApplicationBootstrap {
 
     @Cron(CronExpression.EVERY_2_HOURS)
     async checkForUpdatedEpisodesForAnimeJustFinished() {
+        let currentYear = new Date().getFullYear();
+        const currentSeason = Math.floor((new Date().getMonth() / 12 * 4)) % 4;
+
+        const season = this.seasons[currentSeason];
+        const previousSeason = currentSeason === 0 ? this.seasons[3] : this.seasons[currentSeason - 1];
+        const previousYear = currentSeason === 0 ? currentYear - 1 : currentYear;
+
         this.updateOnCondition({
-            status: {
-                in: ["FINISHED"],
-                year: new Date().getFullYear()
-            }
+            OR: [
+                {
+                    status: {
+                        in: ["FINISHED"]
+                    },
+                    year: currentYear,
+                    season: season
+                },
+                {
+                    status: {
+                        in: ["FINISHED"]
+                    },
+                    year: previousYear,
+                    season: previousSeason
+                }
+            ]
         }, 2).then(() => {
             Logger.debug("Finished checking updated episodes for releasing anime that just finished");
         });
@@ -227,6 +249,5 @@ export default class InformationModule implements OnApplicationBootstrap {
     }
 
     async onApplicationBootstrap() {
-        await this.checkForUpdatedEpisodesForFinishedAnime()
     }
 }
