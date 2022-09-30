@@ -106,6 +106,18 @@ export default class InformationModule implements OnApplicationBootstrap {
         });
     }
 
+    @Cron(CronExpression.EVERY_2_HOURS)
+    async checkForUpdatedEpisodesForAnimeJustFinished() {
+        this.updateOnCondition({
+            status: {
+                in: ["FINISHED"],
+                year: new Date().getFullYear()
+            }
+        }, 2).then(() => {
+            Logger.debug("Finished checking updated episodes for releasing anime that just finished");
+        });
+    }
+
     // Give a higher priority to anime that are either releasing or finished but there's no episode available
     @Cron(CronExpression.EVERY_2_HOURS)
     async checkForUpdatedEpisodesForAnimeWithoutEpisodes() {
@@ -215,6 +227,6 @@ export default class InformationModule implements OnApplicationBootstrap {
     }
 
     async onApplicationBootstrap() {
-        await this.checkForUpdatedEpisodes();
+        await this.checkForUpdatedEpisodesForFinishedAnime()
     }
 }
