@@ -424,12 +424,31 @@ export default class InformationService implements OnApplicationBootstrap {
                                                     id: animeDb.id
                                                 }
                                             },
-                                            airedAt: animeDb.next,
+                                            airedAt: animeDbObject.currentEpisode === 1 ? new Date() : animeDb.next,
                                             number: animeDbObject.currentEpisode
                                         },
                                         update: {
                                             airedAt: animeDb.next
                                         }
+                                    }))
+                                } else if (animeDb.status === "RELEASING" && animeDbObject.currentEpisode === 1) {
+                                    promises.push(this.databaseService.episode.upsert({
+                                        where: {
+                                            animeId_number: {
+                                                animeId: animeDb.id,
+                                                number: animeDbObject.currentEpisode
+                                            }
+                                        },
+                                        create: {
+                                            anime: {
+                                                connect: {
+                                                    id: animeDb.id
+                                                }
+                                            },
+                                            airedAt: new Date(),
+                                            number: animeDbObject.currentEpisode
+                                        },
+                                        update: {}
                                     }))
                                 }
 
