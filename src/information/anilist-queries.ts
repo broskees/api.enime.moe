@@ -101,13 +101,13 @@ query ($id: Int, $page: Int) {
 }
 `
 
-export const AIRING_ANIME = gql`query ($season: MediaSeason, $year: Int, $format: MediaFormat, $excludeFormat: MediaFormat, $status: MediaStatus, $minEpisodes: Int, $page: Int) {
+export const AIRING_ANIME = gql`query ($season: MediaSeason, $year: Int, $format: MediaFormat, $formatIn: [MediaFormat], $excludeFormat: MediaFormat, $status: MediaStatus, $minEpisodes: Int, $page: Int) {
   Page(page: $page) {
     pageInfo {
       hasNextPage
       total
     }
-    media(season: $season, seasonYear: $year, format: $format, format_not: $excludeFormat, status: $status, episodes_greater: $minEpisodes, isAdult: false, type: ANIME, sort: TITLE_ROMAJI) {
+    media(season: $season, seasonYear: $year, format: $format, format_in: $formatIn, format_not: $excludeFormat, status: $status, episodes_greater: $minEpisodes, isAdult: false, type: ANIME, sort: TITLE_ROMAJI) {
       id
       idMal
       title {
@@ -125,6 +125,11 @@ export const AIRING_ANIME = gql`query ($season: MediaSeason, $year: Int, $format
         year
         month
         day
+      }
+      trailer {
+        id
+        site
+        thumbnail
       }
       status
       season
