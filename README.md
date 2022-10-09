@@ -41,7 +41,7 @@ REDIS_PASSWORD={Redis password}
 
 ## Performance
 * Enime API tries to only scrape anime that has necessity of being scraped through a semi-sophisticated algorithm, resulting in its capacity to keep track of thousands of anime at the same time with high performance.
-  * On average, Enime API only uses ~800MB of RAM (spikes to ~2.5GB when intensively scraping) and <15% of CPU (80% when intensively scraping) while keeping track of ~2000 anime
+  * On average, Enime API only uses ~300MB of RAM (spikes to ~1.3GB when intensively scraping) and <15% of CPU (80% when intensively scraping) while keeping track of ~6000 anime
 
 ## Credit
 - https://github.com/consumet/consumet.ts - Some of the scraper logic from various anime sites
