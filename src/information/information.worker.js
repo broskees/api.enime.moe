@@ -15,7 +15,7 @@ function getClient(proxy = false) {
 
 export async function loadAnimeFromAnilist({ condition, includePrevious = true }) {
     const seasons = ["WINTER", "SPRING", "SUMMER", "FALL"];
-    const client = getClient();
+    const client = getClient(true);
 
     const trackingAnime = [];
     let current = true;
