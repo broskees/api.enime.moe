@@ -127,6 +127,7 @@ export default class AnimeController {
                             titleVariations: true,
                             description: true,
                             image: true,
+                            createdAt: true,
                             airedAt: true,
                             sources: {
                                 select: {
