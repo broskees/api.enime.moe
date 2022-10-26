@@ -1,13 +1,12 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import MappingService from '../mapping/mapping.service';
-import RapidCloudService from './rapid-cloud/rapid-cloud.service';
 import { Throttle } from '@nestjs/throttler';
 
 @Controller("/tool")
 @ApiExcludeController()
 export default class ToolController {
-    constructor(private readonly rapidCloudService: RapidCloudService, private readonly mappingService: MappingService) {
+    constructor(private readonly mappingService: MappingService) {
     }
 
     @Get("/mapping/:provider/:id")
@@ -28,10 +27,5 @@ export default class ToolController {
         delete mapping["type"];
 
         return mapping;
-    }
-
-    @Get("/rapid-cloud/server-id")
-    async rapidCloudServerId() {
-        return this.rapidCloudService.serverId;
     }
 }

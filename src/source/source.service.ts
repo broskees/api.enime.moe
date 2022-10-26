@@ -64,7 +64,6 @@ export default class SourceService {
                 rawSource = await scraper.getRawSource(source.target, {
                     referer: source?.referer,
                     ...(this.rapidCloudService && {
-                        serverId: this.rapidCloudService.serverId,
                         decryptionKey: this.rapidCloudService.decryptionKey
                     })
                 });

@@ -10,7 +10,7 @@ class RapidCloud extends VideoExtractor {
 
     private readonly host = 'https://rapid-cloud.co';
 
-    constructor(private readonly serverId, private readonly decryptionKey) {
+    constructor(private readonly decryptionKey) {
         super();
     }
 
@@ -25,12 +25,8 @@ class RapidCloud extends VideoExtractor {
                 },
             };
 
-            let res = null;
-
-            const sId = this.serverId;
-
-            res = await (await axios.get(
-                `${this.host}/ajax/embed-6/getSources?id=${id}&sId=${sId}`,
+            let res = await (await axios.get(
+                `${this.host}/ajax/embed-6/getSources?id=${id}`,
                 options
             )).data;
 
