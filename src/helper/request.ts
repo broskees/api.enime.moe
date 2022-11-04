@@ -19,18 +19,25 @@ axiosRetry(axios, {
     onRetry: async (number, error, requestConfig) => {
         requestConfig.url = proxyHost() + "?url=" + encodeURIComponent(requestConfig.url);
         // @ts-ignore
-        requestConfig.headers["x-api-key"] = process.env.PROXY_API_KEY;
+        if (process.env.PROXY_API_KEY) {
+            requestConfig.headers["x-api-key"] = process.env.PROXY_API_KEY;
+        }
     }
 });
 
 export const proxiedGet = async (url, config: AxiosRequestConfig<any> = {}) => {
+    let additionalHeaders = {
+        ...config.headers,
+        "user-agent": USER_AGENT
+    }
+
+    if (process.env.PROXY_API_KEY) {
+        additionalHeaders["x-api-key"] = process.env.PROXY_API_KEY
+    }
+
     return axios.get(proxyHost() + "?url=" + encodeURIComponent(url), {
         ...config,
-        headers: {
-            ...config.headers,
-            "user-agent": USER_AGENT,
-            "x-api-key": process.env.PROXY_API_KEY
-        }
+        headers: additionalHeaders
     })
 }
 

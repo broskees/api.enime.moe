@@ -4,12 +4,17 @@ import { GraphQLClient } from 'graphql-request';
 const anilistBaseEndpoint = "https://graphql.anilist.co";
 
 function getClient(proxy = false) {
+    let theseHeaders = {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+    }
+
+    if (process.env.PROXY_API_KEY) {
+        theseHeaders["x-api-key"] = process.env.PROXY_API_KEY
+    }
+
     return new GraphQLClient(proxy ? `https://proxy.enime.moe?url=${encodeURIComponent(anilistBaseEndpoint)}` : anilistBaseEndpoint, {
-        headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "x-api-key": process.env.PROXY_API_KEY
-        }
+        headers: theseHeaders
     });
 }
 

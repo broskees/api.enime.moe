@@ -54,10 +54,16 @@ export default class RapidCloudService implements OnModuleInit {
 
     @Cron(CronExpression.EVERY_10_MINUTES)
     async refreshDecryptionKey() {
-        this.decryptionKey = (await axios.get(this.decryptionKeyFlow, {
-            headers: {
-                "x-api-key": process.env.WORKER_API_KEY
-            }
-        })).data;
+        let params = {};
+
+        if (process.env.WORKER_API_KEY) {
+            params = {
+                headers: {
+                    "x-api-key": process.env.WORKER_API_KEY
+                }
+            };
+        }
+
+        this.decryptionKey = (await axios.get(this.decryptionKeyFlow, params)).data;
     }
 }
